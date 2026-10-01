@@ -32,46 +32,54 @@ export default function Pets({ data, onChange }) {
         />
       </div>
 
-      <div className="sm:col-span-2">
-        <FieldLabel>Declaration Compliance</FieldLabel>
-        <SegmentedControl
-          name="pets_allowed"
-          value={data.allowed}
-          onChange={(v) => onChange('allowed', v)}
-          options={[
-            {
-              value: 'Allowed',
-              label: '✓ Allowed (Compliant)',
-              activeClass: 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold',
-            },
-            {
-              value: 'Prohibited',
-              label: '⚠️ Prohibited / Unauthorized',
-              activeClass: 'bg-rose-600 text-white shadow-md shadow-rose-600/20 font-bold',
-            },
-          ]}
-        />
-      </div>
+      {data.present === 'Yes' && (
+        <>
+          <div className="sm:col-span-2">
+            <FieldLabel>Declaration Compliance</FieldLabel>
+            <SegmentedControl
+              name="pets_allowed"
+              value={data.allowed}
+              onChange={(v) => onChange('allowed', v)}
+              options={[
+                {
+                  value: 'Allowed',
+                  label: '✓ Allowed (Compliant)',
+                  activeClass: 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold',
+                },
+                {
+                  value: 'Prohibited',
+                  label: '⚠️ Prohibited / Unauthorized',
+                  activeClass: 'bg-rose-600 text-white shadow-md shadow-rose-600/20 font-bold',
+                },
+              ]}
+            />
+          </div>
 
-      <FullWidth>
-        <TextInput
-          id="pets_details"
-          label="Details & Pet Description"
-          value={data.details}
-          onChange={(v) => onChange('details', v)}
-          placeholder="Breed, size, number of animals, weight, registration badge..."
-        />
-      </FullWidth>
+          {data.allowed === 'Prohibited' && (
+            <>
+              <FullWidth>
+                <TextInput
+                  id="pets_details"
+                  label="Details & Pet Description"
+                  value={data.details}
+                  onChange={(v) => onChange('details', v)}
+                  placeholder="Breed, size, number of animals, weight, registration badge..."
+                />
+              </FullWidth>
 
-      <FullWidth>
-        <TextInput
-          id="pets_other"
-          label="Other Observations"
-          value={data.other}
-          onChange={(v) => onChange('other', v)}
-          placeholder="Noise, odors, suite damage, common element impact..."
-        />
-      </FullWidth>
+              <FullWidth>
+                <TextInput
+                  id="pets_other"
+                  label="Other Observations"
+                  value={data.other}
+                  onChange={(v) => onChange('other', v)}
+                  placeholder="Noise, odors, suite damage, common element impact..."
+                />
+              </FullWidth>
+            </>
+          )}
+        </>
+      )}
     </ItemCard>
   )
 }

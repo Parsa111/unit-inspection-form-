@@ -32,57 +32,61 @@ export default function Washer({ data, onChange }) {
         />
       </div>
 
-      <div className="sm:col-span-2">
-        <FieldLabel>Connection Type</FieldLabel>
-        <div className="flex flex-wrap gap-2.5">
-          <CheckPill
-            label="Portable (circled)"
-            checked={data.portable}
-            onChange={(v) => onChange('portable', v)}
-          />
-          <CheckPill
-            label="Direct (circled)"
-            checked={data.direct}
-            onChange={(v) => onChange('direct', v)}
-          />
-          <CheckPill
-            label="Kitchen"
-            checked={data.kitchen}
-            onChange={(v) => onChange('kitchen', v)}
-          />
-        </div>
-      </div>
+      {data.present === 'Yes' && (
+        <>
+          <div className="sm:col-span-2">
+            <FieldLabel>Connection Type</FieldLabel>
+            <div className="flex flex-wrap gap-2.5">
+              <CheckPill
+                label="Portable (circled)"
+                checked={data.portable}
+                onChange={(v) => onChange('portable', v)}
+              />
+              <CheckPill
+                label="Direct (circled)"
+                checked={data.direct}
+                onChange={(v) => onChange('direct', v)}
+              />
+              <CheckPill
+                label="Kitchen"
+                checked={data.kitchen}
+                onChange={(v) => onChange('kitchen', v)}
+              />
+            </div>
+          </div>
 
-      <div className="sm:col-span-2">
-        <FieldLabel>Safety Inspection</FieldLabel>
-        <div className="flex flex-wrap gap-2.5">
-          <CheckPill
-            label="Check valves"
-            checked={data.checkValves}
-            onChange={(v) => onChange('checkValves', v)}
-          />
-        </div>
-      </div>
+          <div className="sm:col-span-2">
+            <FieldLabel>Safety Inspection</FieldLabel>
+            <div className="flex flex-wrap gap-2.5">
+              <CheckPill
+                label="Check valves"
+                checked={data.checkValves}
+                onChange={(v) => onChange('checkValves', v)}
+              />
+            </div>
+          </div>
 
-      <FullWidth>
-        <TextInput
-          id="washer_notes"
-          label="Pipe / Supplies Line & Disposer Note"
-          value={data.notes}
-          onChange={(v) => onChange('notes', v)}
-          placeholder="Check braided steel hoses, shut-off valves, disposer status..."
-        />
-      </FullWidth>
+          <FullWidth>
+            <TextInput
+              id="washer_notes"
+              label="Pipe / Supplies Line & Disposer Note"
+              value={data.notes}
+              onChange={(v) => onChange('notes', v)}
+              placeholder="Check braided steel hoses, shut-off valves, disposer status..."
+            />
+          </FullWidth>
 
-      <FullWidth>
-        <TextInput
-          id="washer_other"
-          label="Other Observations"
-          value={data.other}
-          onChange={(v) => onChange('other', v)}
-          placeholder="Drain hose routing, spill tray, floor condition..."
-        />
-      </FullWidth>
+          <FullWidth>
+            <TextInput
+              id="washer_other"
+              label="Other Observations"
+              value={data.other}
+              onChange={(v) => onChange('other', v)}
+              placeholder="Drain hose routing, spill tray, floor condition..."
+            />
+          </FullWidth>
+        </>
+      )}
     </ItemCard>
   )
 }

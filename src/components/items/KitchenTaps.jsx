@@ -31,25 +31,29 @@ export default function KitchenTaps({ data, onChange }) {
         />
       </div>
 
-      <FullWidth>
-        <TextInput
-          id="kt_pipes"
-          label="Under-Sink Pipes & P-Trap Note"
-          value={data.pipesNote}
-          onChange={(v) => onChange('pipesNote', v)}
-          placeholder="plastic pipes kitchen. suspected leaking..."
-        />
-      </FullWidth>
+      {data.status === 'Leaking' && (
+        <>
+          <FullWidth>
+            <TextInput
+              id="kt_pipes"
+              label="Under-Sink Pipes & P-Trap Note"
+              value={data.pipesNote}
+              onChange={(v) => onChange('pipesNote', v)}
+              placeholder="plastic pipes kitchen. suspected leaking..."
+            />
+          </FullWidth>
 
-      <FullWidth>
-        <TextInput
-          id="kt_other"
-          label="Other Observations"
-          value={data.other}
-          onChange={(v) => onChange('other', v)}
-          placeholder="Water pressure, shut-off valve condition, fixture play, aerator..."
-        />
-      </FullWidth>
+          <FullWidth>
+            <TextInput
+              id="kt_other"
+              label="Other Observations"
+              value={data.other}
+              onChange={(v) => onChange('other', v)}
+              placeholder="Water pressure, shut-off valve condition, fixture play, aerator..."
+            />
+          </FullWidth>
+        </>
+      )}
     </ItemCard>
   )
 }

@@ -31,26 +31,30 @@ export default function Dryer({ data, onChange }) {
         />
       </div>
 
-      <div>
-        <FieldLabel>Location</FieldLabel>
-        <div className="flex flex-wrap gap-2.5">
-          <CheckPill
-            label="Kitchen"
-            checked={data.kitchen}
-            onChange={(v) => onChange('kitchen', v)}
-          />
-        </div>
-      </div>
+      {data.present === 'Yes' && (
+        <>
+          <div>
+            <FieldLabel>Location</FieldLabel>
+            <div className="flex flex-wrap gap-2.5">
+              <CheckPill
+                label="Kitchen"
+                checked={data.kitchen}
+                onChange={(v) => onChange('kitchen', v)}
+              />
+            </div>
+          </div>
 
-      <FullWidth>
-        <TextInput
-          id="dryer_other"
-          label="Other Observations"
-          value={data.other}
-          onChange={(v) => onChange('other', v)}
-          placeholder="Dryer vent condition, lint ducting, exterior exhaust..."
-        />
-      </FullWidth>
+          <FullWidth>
+            <TextInput
+              id="dryer_other"
+              label="Other Observations"
+              value={data.other}
+              onChange={(v) => onChange('other', v)}
+              placeholder="Dryer vent condition, lint ducting, exterior exhaust..."
+            />
+          </FullWidth>
+        </>
+      )}
     </ItemCard>
   )
 }

@@ -32,25 +32,29 @@ export default function PartitionWalls({ data, onChange }) {
         />
       </div>
 
-      <FullWidth>
-        <TextInput
-          id="pw_details"
-          label="Details & Locations"
-          value={data.details}
-          onChange={(v) => onChange('details', v)}
-          placeholder="Specify partition location, drywall, folding screen, or framing..."
-        />
-      </FullWidth>
+      {data.status === 'Yes' && (
+        <>
+          <FullWidth>
+            <TextInput
+              id="pw_details"
+              label="Details & Locations"
+              value={data.details}
+              onChange={(v) => onChange('details', v)}
+              placeholder="Specify partition location, drywall, folding screen, or framing..."
+            />
+          </FullWidth>
 
-      <FullWidth>
-        <TextInput
-          id="pw_other"
-          label="Other Observations"
-          value={data.other}
-          onChange={(v) => onChange('other', v)}
-          placeholder="Additional comments or findings..."
-        />
-      </FullWidth>
+          <FullWidth>
+            <TextInput
+              id="pw_other"
+              label="Other Observations"
+              value={data.other}
+              onChange={(v) => onChange('other', v)}
+              placeholder="Additional comments or findings..."
+            />
+          </FullWidth>
+        </>
+      )}
     </ItemCard>
   )
 }

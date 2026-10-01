@@ -12,6 +12,14 @@ import SuccessCard from './components/SuccessCard'
 
 const STORAGE_KEY = 'ycc76_inspection_draft'
 
+function getLocalDateString() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const defaultForm = {
   inspectionDate: '',
   building: '5 Massey Square',
@@ -28,11 +36,18 @@ const defaultForm = {
 
 export default function App() {
   const [form, setForm] = useState(() => {
+    const today = getLocalDateString()
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
-      return saved ? { ...defaultForm, ...JSON.parse(saved) } : { ...defaultForm }
+      const savedForm = saved ? JSON.parse(saved) : {}
+      return {
+        ...defaultForm,
+        ...savedForm,
+        inspectionDate: today,
+        inspectorDate: savedForm.inspectorDate || today,
+      }
     } catch {
-      return { ...defaultForm }
+      return { ...defaultForm, inspectionDate: today, inspectorDate: today }
     }
   })
   const [submitted, setSubmitted] = useState(false)
@@ -40,16 +55,6 @@ export default function App() {
   const [errors, setErrors] = useState({})
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ycc76_theme') === 'dark')
   const signatureRef = useRef(null)
-
-  // Set today's date on first load if empty
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0]
-    setForm((f) => ({
-      ...f,
-      inspectionDate: f.inspectionDate || today,
-      inspectorDate: f.inspectorDate || today,
-    }))
-  }, [])
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -81,11 +86,6 @@ export default function App() {
         return n
       })
     }
-  }
-
-  const setToday = () => {
-    const today = new Date().toISOString().split('T')[0]
-    setForm((f) => ({ ...f, inspectionDate: today, inspectorDate: today }))
   }
 
   // Calculate completion count (7 total sections)
@@ -147,7 +147,7 @@ export default function App() {
       setForm({ ...defaultForm })
       signatureRef.current?.clear()
       setErrors({})
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDateString()
       setForm((f) => ({ ...f, inspectionDate: today, inspectorDate: today }))
     }
   }
@@ -159,7 +159,7 @@ export default function App() {
     setErrors({})
     setSubmitted(false)
     setSubmittedData(null)
-    const today = new Date().toISOString().split('T')[0]
+    const today = getLocalDateString()
     setForm((f) => ({ ...f, inspectionDate: today, inspectorDate: today }))
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -198,7 +198,6 @@ export default function App() {
           <CorpHeader
             form={form}
             setForm={setForm}
-            setToday={setToday}
             errors={errors}
             setErrors={setErrors}
           />

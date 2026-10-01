@@ -252,7 +252,15 @@ function SuiteDropdown({ value, onChange, error }) {
   )
 }
 
-export default function CorpHeader({ form, setForm, setToday, errors, setErrors }) {
+export default function CorpHeader({ form, setForm, errors, setErrors }) {
+  const inspectionDate = form.inspectionDate
+    ? new Date(`${form.inspectionDate}T00:00:00`).toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : ''
+
   const clearErr = (key) =>
     setErrors((e) => {
       const n = { ...e }
@@ -271,41 +279,7 @@ export default function CorpHeader({ form, setForm, setToday, errors, setErrors 
           <div className="flex items-center gap-4">
             {/* High-res YCC Crescent Town Tree Seal */}
             <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md p-2 flex items-center justify-center border border-white/20 shadow-md flex-shrink-0">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <rect
-                  x="2"
-                  y="2"
-                  width="96"
-                  height="96"
-                  rx="10"
-                  fill="none"
-                  stroke="rgba(255,255,255,0.7)"
-                  strokeWidth="3"
-                />
-                <path
-                  d="M50 18C35 18 24 28 24 42C24 50 28 57 34 62C34 66 35 70 36 74L44 74L44 86L56 86L56 74L64 74C65 70 66 66 66 62C72 57 76 50 76 42C76 28 65 18 50 18Z"
-                  fill="#ffffff"
-                />
-                <path d="M46 72L54 72L54 86L46 86Z" fill="#b45309" />
-                <circle cx="42" cy="38" r="8" fill="#15803d" />
-                <circle cx="58" cy="38" r="8" fill="#15803d" />
-                <circle cx="50" cy="30" r="9" fill="#22c55e" />
-                <circle cx="36" cy="50" r="7" fill="#15803d" />
-                <circle cx="64" cy="50" r="7" fill="#15803d" />
-                <circle cx="50" cy="48" r="9" fill="#4ade80" />
-                <text
-                  x="50"
-                  y="94"
-                  fontFamily="sans-serif"
-                  fontSize="7.5"
-                  fontWeight="800"
-                  textAnchor="middle"
-                  fill="#ffffff"
-                  letterSpacing="1"
-                >
-                  CRESCENT TOWN
-                </text>
-              </svg>
+              <img src="/image.png" alt="YCC No. 76 logo" className="w-full h-full object-contain" />
             </div>
 
             <div>
@@ -348,29 +322,17 @@ export default function CorpHeader({ form, setForm, setToday, errors, setErrors 
 
       {/* Meta Grid: Date, Building, Suite # */}
       <div className="p-6 bg-white dark:bg-slate-900 grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-b-2xl">
-        {/* Date Input */}
+        {/* Inspection Date */}
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="inspectionDate"
-            className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
-          >
+          <span className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Inspection Date
-          </label>
-          <div className="flex gap-2">
-            <input
-              id="inspectionDate"
-              type="date"
-              value={form.inspectionDate}
-              onChange={(e) => setForm((f) => ({ ...f, inspectionDate: e.target.value }))}
-              className="flex-1 min-h-[44px] px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all"
-            />
-            <button
-              type="button"
-              onClick={setToday}
-              className="px-3.5 py-2 text-xs font-bold rounded-xl bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors whitespace-nowrap active:scale-95 cursor-pointer"
-            >
-              Today
-            </button>
+          </span>
+          <div
+            id="inspectionDate"
+            aria-readonly="true"
+            className="flex min-h-[44px] items-center px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200"
+          >
+            {inspectionDate}
           </div>
         </div>
 

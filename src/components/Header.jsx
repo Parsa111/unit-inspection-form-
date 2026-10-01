@@ -8,14 +8,7 @@ export default function Header({ darkMode, setDarkMode, onReset, completedCount,
         {/* Brand & Status */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-navy-700 to-navy-900 shadow-inner flex items-center justify-center flex-shrink-0 border border-white/20">
-            <svg viewBox="0 0 40 40" fill="none" className="w-7 h-7">
-              <rect width="40" height="40" rx="8" fill="#1e3a5f" />
-              <path d="M20 7C14.5 7 10 11.2 10 16.5C10 19.8 11.7 22.7 14.3 24.3C14.1 24.9 14 25.4 14 26H18V33H22V26H26C26 25.4 25.9 24.9 25.7 24.3C28.3 22.7 30 19.8 30 16.5C30 11.2 25.5 7 20 7Z" fill="#22c55e" />
-              <path d="M19 25H21V33H19V25Z" fill="#92400e" />
-              <circle cx="16" cy="15" r="2.5" fill="#15803d" />
-              <circle cx="24" cy="15" r="2.5" fill="#15803d" />
-              <circle cx="20" cy="12" r="3" fill="#16a34a" />
-            </svg>
+            <img src="/image.png" alt="YCC No. 76 logo" className="w-full h-full object-contain rounded-xl" />
           </div>
           <div>
             <div className="flex items-center gap-2">
