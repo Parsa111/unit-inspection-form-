@@ -380,9 +380,9 @@ export default function CorpHeader({ form, setForm, errors, setErrors }) {
               }}
               className="w-full min-h-[44px] px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all appearance-none cursor-pointer"
             >
-              <option>1 Massay</option>
-              <option>3 Massay</option>
-              <option>5 Massay</option>
+              <option>1 Massey</option>
+              <option>3 Massey</option>
+              <option>5 Massey</option>
               <option>10/12 Crescent town RD</option>
               <option>2/4 Crescent town RD</option>
               <option>6/4 Crescent town RD</option>
@@ -405,7 +405,7 @@ export default function CorpHeader({ form, setForm, errors, setErrors }) {
             >
               Unit / Suite # <span className="text-red-500">*</span>
               <span className="block normal-case font-medium text-[0.65rem] text-slate-400 dark:text-slate-500">
-                Format: 1 Massay-1001
+                Format: 1 Massey-1001
               </span>
             </label>
             {errors.suiteNumber && (

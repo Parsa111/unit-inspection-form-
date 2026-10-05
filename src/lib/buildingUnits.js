@@ -66,9 +66,9 @@ export function clearUnitCache() {
 
 // Building prefix -> full address / stats shown in the dropdown header
 export const BUILDING_NAMES = {
-  '701': '1 Massay',
-  '703': '3 Massay',
-  '705': '5 Massay',
+  '701': '1 Massey',
+  '703': '3 Massey',
+  '705': '5 Massey',
   '710': '10/12 Crescent town RD',
   '724': '2/4 Crescent town RD',
   '768': '6/4 Crescent town RD',
