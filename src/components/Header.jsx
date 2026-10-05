@@ -1,5 +1,12 @@
+import { useState, useEffect } from 'react'
+
 export default function Header({ darkMode, setDarkMode, onReset, completedCount, totalCount }) {
   const percent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 glass-panel border-b border-slate-200/80 dark:border-slate-800 shadow-sm backdrop-blur-md transition-colors">
@@ -63,7 +70,7 @@ export default function Header({ darkMode, setDarkMode, onReset, completedCount,
       {/* Progress Line */}
       <div className="w-full bg-slate-100 dark:bg-slate-800 h-1 overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 transition-all duration-300 ease-out"
+          className={`h-full bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-500 ${mounted ? 'transition-all duration-300 ease-out' : ''}`}
           style={{ width: `${percent}%` }}
         />
       </div>

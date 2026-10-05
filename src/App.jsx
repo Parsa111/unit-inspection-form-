@@ -37,18 +37,7 @@ const defaultForm = {
 export default function App() {
   const [form, setForm] = useState(() => {
     const today = getLocalDateString()
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      const savedForm = saved ? JSON.parse(saved) : {}
-      return {
-        ...defaultForm,
-        ...savedForm,
-        inspectionDate: today,
-        inspectorDate: savedForm.inspectorDate || today,
-      }
-    } catch {
-      return { ...defaultForm, inspectionDate: today, inspectorDate: today }
-    }
+    return { ...defaultForm, inspectionDate: today, inspectorDate: today }
   })
   const [submitted, setSubmitted] = useState(false)
   const [submittedData, setSubmittedData] = useState(null)
