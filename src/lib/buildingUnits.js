@@ -6,6 +6,7 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lcmV0YnNjam1waHB0bHl0Ymh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNTU2MDksImV4cCI6MjEwNjczMTYwOX0.xozfH5GPqsSZtMSQQqKivtm0RFXkT9zmrOCXZzlXuuM'
 
 const UNITS_ENDPOINT = `${SUPABASE_URL}/rest/v1/Building_unit?select=Unit&order=Unit.asc`
+const PAGE_SIZE = 1000
 
 const headers = {
   apikey: SUPABASE_ANON_KEY,
@@ -19,17 +20,34 @@ function naturalCompare(a, b) {
   return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })
 }
 
+async function fetchAllUnits() {
+  const collected = []
+  let offset = 0
+
+  // Supabase caps REST responses at 1000 rows, so page until the table is exhausted
+  for (;;) {
+    const url = `${UNITS_ENDPOINT}&limit=${PAGE_SIZE}&offset=${offset}`
+    const res = await fetch(url, { headers })
+    if (!res.ok) throw new Error(`Failed to load units (${res.status})`)
+
+    const rows = await res.json()
+    if (!Array.isArray(rows) || rows.length === 0) break
+
+    collected.push(...rows)
+    if (rows.length < PAGE_SIZE) break
+    offset += PAGE_SIZE
+  }
+
+  return collected
+}
+
 export async function fetchBuildingUnits() {
   if (cache) return cache
 
   cache = (async () => {
-    const res = await fetch(UNITS_ENDPOINT, { headers })
-    if (!res.ok) throw new Error(`Failed to load units (${res.status})`)
+    const rows = await fetchAllUnits()
 
-    const rows = await res.json()
-    const units = Array.isArray(rows) ? rows : []
-
-    return [...new Set(units.map((r) => (r?.Unit ?? '').toString().trim()).filter(Boolean))].sort(
+    return [...new Set(rows.map((r) => (r?.Unit ?? '').toString().trim()).filter(Boolean))].sort(
       naturalCompare
     )
   })()
@@ -40,6 +58,10 @@ export async function fetchBuildingUnits() {
     cache = null
     throw err
   }
+}
+
+export function clearUnitCache() {
+  cache = null
 }
 
 // Unit codes are <building>-<unit>, e.g. 701-1001 (building 701) and 702-0205 (building 702)
