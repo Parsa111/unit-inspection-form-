@@ -104,7 +104,7 @@ function SuiteDropdown({ value, onChange, error }) {
             : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
         }`}
       >
-        <span className={value ? 'font-semibold' : 'text-slate-400'}>
+        <span className={value ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}>
           {value ? formatUnitCode(value) : '— Select Unit / Suite # —'}
         </span>
 
@@ -144,7 +144,7 @@ function SuiteDropdown({ value, onChange, error }) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search unit or building (e.g. 1001, 701)..."
+                placeholder="Search unit (e.g. 1001)..."
                 className="w-full min-h-[36px] pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <svg
@@ -188,7 +188,7 @@ function SuiteDropdown({ value, onChange, error }) {
             ) : filteredGroups.length > 0 ? (
               filteredGroups.map((group) => (
                 <div key={group.label} className="py-1">
-                  <div className="px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 rounded-md my-0.5">
+                  <div className="px-3 py-1 text-[0.62rem] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 rounded-md my-0.5 leading-tight break-words">
                     {group.label}
                   </div>
                   {group.floors.map((floor) => (
@@ -372,9 +372,12 @@ export default function CorpHeader({ form, setForm, errors, setErrors }) {
               onChange={(e) => setForm((f) => ({ ...f, building: e.target.value }))}
               className="w-full min-h-[44px] px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all appearance-none cursor-pointer"
             >
-              <option>5 Massey Square</option>
-              <option>3 Massey Square</option>
-              <option>1 Massey Square</option>
+              <option>1 Massay</option>
+              <option>3 Massay</option>
+              <option>5 Massay</option>
+              <option>10/12 Crescent town RD</option>
+              <option>2/4 Crescent town RD</option>
+              <option>6/4 Crescent town RD</option>
               <option>Other</option>
             </select>
             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
@@ -394,7 +397,7 @@ export default function CorpHeader({ form, setForm, errors, setErrors }) {
             >
               Unit / Suite # <span className="text-red-500">*</span>
               <span className="block normal-case font-medium text-[0.65rem] text-slate-400 dark:text-slate-500">
-                Format: 701-1001
+                Format: 1 Massay-1001
               </span>
             </label>
             {errors.suiteNumber && (

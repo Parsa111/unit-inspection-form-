@@ -64,6 +64,16 @@ export function clearUnitCache() {
   cache = null
 }
 
+// Building prefix -> full address / stats shown in the dropdown header
+export const BUILDING_NAMES = {
+  '701': '1 Massay',
+  '703': '3 Massay',
+  '705': '5 Massay',
+  '710': '10/12 Crescent town RD',
+  '724': '2/4 Crescent town RD',
+  '768': '6/4 Crescent town RD',
+}
+
 // Unit codes are <building>-<unit>, e.g. 701-1001 (building 701) and 702-0205 (building 702)
 export function parseUnitCode(code) {
   const raw = (code ?? '').toString().trim()
@@ -78,7 +88,8 @@ export function parseUnitCode(code) {
 
 export function formatUnitCode(code) {
   const { building, unit } = parseUnitCode(code)
-  return building ? `Bldg ${building} \u00b7 Unit ${unit}` : `Unit ${unit}`
+  const buildingName = building ? BUILDING_NAMES[building] || `Bldg ${building}` : ''
+  return building ? `${buildingName} \u00b7 Unit ${unit}` : `Unit ${unit}`
 }
 
 export function groupUnitsByBuilding(units) {
@@ -101,7 +112,7 @@ export function groupUnitsByBuilding(units) {
   const groups = [...buildings.entries()]
     .sort((a, b) => naturalCompare(a[0], b[0]))
     .map(([building, floors]) => ({
-      label: `Building ${building}`,
+      label: BUILDING_NAMES[building] || `Building ${building}`,
       floors: [...floors.entries()]
         .sort((a, b) => naturalCompare(a[0], b[0]))
         .map(([label, units]) => ({ label, units })),

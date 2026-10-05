@@ -22,7 +22,7 @@ function getLocalDateString() {
 
 const defaultForm = {
   inspectionDate: '',
-  building: '5 Massey Square',
+  building: '5 Massay',
   suiteNumber: '',
   partitionWalls: { status: '', details: '', other: '' },
   washer: { present: '', portable: false, direct: false, kitchen: false, checkValves: false, notes: '', other: '' },
