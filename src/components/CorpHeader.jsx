@@ -1,53 +1,38 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-
-// Generate standard Crescent Town high-rise suite list grouped by floor
-const SUITE_GROUPS = (() => {
-  const groups = []
-
-  // Quick picks
-  groups.push({
-    label: '⭐ Quick Select / Common',
-    suites: ['1408', '101', '205', '510', '1012', '2104', '3008', 'PH-01'],
-  })
-
-  // Floors 1 to 35
-  for (let floor = 1; floor <= 35; floor++) {
-    const suites = []
-    for (let u = 1; u <= 14; u++) {
-      if (u === 13) continue // 13 is commonly excluded in Canadian high rises
-      const unitStr = u < 10 ? `0${u}` : `${u}`
-      suites.push(`${floor}${unitStr}`)
-    }
-    groups.push({
-      label: `Floor ${floor}`,
-      suites,
-    })
-  }
-
-  // Penthouses & Townhouses
-  groups.push({
-    label: 'Penthouses (PH)',
-    suites: ['PH-01', 'PH-02', 'PH-03', 'PH-04', 'PH-05', 'PH-06', 'PH-07', 'PH-08'],
-  })
-
-  groups.push({
-    label: 'Townhouses & Common',
-    suites: ['TH-01', 'TH-02', 'TH-03', 'TH-04', 'Office', 'Superintendent', 'Rec Centre'],
-  })
-
-  return groups
-})()
-
-// Flattened list for search
-const ALL_SUITES = SUITE_GROUPS.flatMap((g) => g.suites)
+import { fetchBuildingUnits, groupUnitsByBuilding, formatUnitCode, parseUnitCode } from '../lib/buildingUnits'
 
 function SuiteDropdown({ value, onChange, error }) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [customMode, setCustomMode] = useState(false)
   const [customValue, setCustomValue] = useState('')
+  const [units, setUnits] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const dropdownRef = useRef(null)
   const searchInputRef = useRef(null)
+
+  useEffect(() => {
+    let active = true
+
+    fetchBuildingUnits()
+      .then((list) => {
+        if (!active) return
+        setUnits(list)
+        setLoadError('')
+      })
+      .catch((err) => {
+        if (!active) return
+        setLoadError(err.message || 'Unable to load units')
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   // Close on outside click
   useEffect(() => {
@@ -67,15 +52,22 @@ function SuiteDropdown({ value, onChange, error }) {
     }
   }, [isOpen])
 
-  // Filtered suites
+  // Grouped units from the database, split by building
+  const groupedUnits = useMemo(() => groupUnitsByBuilding(units), [units])
+
+  // Filtered units
   const filteredGroups = useMemo(() => {
-    if (!search.trim()) return SUITE_GROUPS
+    if (!search.trim()) return groupedUnits
     const query = search.trim().toLowerCase()
-    return SUITE_GROUPS.map((group) => ({
-      ...group,
-      suites: group.suites.filter((s) => s.toLowerCase().includes(query)),
-    })).filter((group) => group.suites.length > 0)
-  }, [search])
+    return groupedUnits
+      .map((group) => ({
+        ...group,
+        floors: group.floors
+          .map((f) => ({ ...f, units: f.units.filter((u) => u.toLowerCase().includes(query)) }))
+          .filter((f) => f.units.length > 0),
+      }))
+      .filter((group) => group.floors.length > 0)
+  }, [groupedUnits, search])
 
   const selectSuite = (suite) => {
     onChange(suite)
@@ -113,7 +105,7 @@ function SuiteDropdown({ value, onChange, error }) {
         }`}
       >
         <span className={value ? 'font-semibold' : 'text-slate-400'}>
-          {value ? `Suite #${value}` : '— Select Unit / Suite # —'}
+          {value ? formatUnitCode(value) : '— Select Unit / Suite # —'}
         </span>
 
         <div className="flex items-center gap-1.5 text-slate-400">
@@ -143,7 +135,7 @@ function SuiteDropdown({ value, onChange, error }) {
       {/* Downward Dropdown Menu - physically anchored top-full to ALWAYS open down */}
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-1 duration-150">
-          
+
           {/* Search bar inside dropdown */}
           <div className="p-2.5 bg-slate-50 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
             <div className="relative">
@@ -152,7 +144,7 @@ function SuiteDropdown({ value, onChange, error }) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search suite # (e.g. 1408, 205)..."
+                placeholder="Search unit or building (e.g. 1001, 701)..."
                 className="w-full min-h-[36px] pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <svg
@@ -171,59 +163,88 @@ function SuiteDropdown({ value, onChange, error }) {
             </div>
           </div>
 
-          {/* Scrollable Suites List */}
+          {/* Scrollable Unit List */}
           <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 p-1">
-            {filteredGroups.length > 0 ? (
+            {loading ? (
+              <div className="p-6 text-center">
+                <p className="text-xs text-slate-500 dark:text-slate-400">Loading units…</p>
+              </div>
+            ) : loadError ? (
+              <div className="p-6 text-center">
+                <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1">
+                  Could not load unit list
+                </p>
+                <p className="text-[0.7rem] text-slate-500 dark:text-slate-400">{loadError}</p>
+              </div>
+            ) : units.length === 0 ? (
+              <div className="p-6 text-center">
+                <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                  No units available
+                </p>
+                <p className="text-[0.7rem] text-slate-500 dark:text-slate-400">
+                  No unit numbers found in Building_unit.
+                </p>
+              </div>
+            ) : filteredGroups.length > 0 ? (
               filteredGroups.map((group) => (
                 <div key={group.label} className="py-1">
-                  <div className="px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-slate-800/40 rounded-md my-0.5">
+                  <div className="px-3 py-1 text-[0.65rem] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 rounded-md my-0.5">
                     {group.label}
                   </div>
-                  <div className="grid grid-cols-3 gap-1 px-1 py-1">
-                    {group.suites.map((s) => {
-                      const isSelected = value === s
-                      return (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => selectSuite(s)}
-                          className={`px-2 py-1.5 text-xs font-semibold rounded-lg text-center transition-all ${
-                            isSelected
-                              ? 'bg-blue-600 text-white font-bold shadow-sm'
-                              : 'text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400'
-                          }`}
-                        >
-                          {s}
-                        </button>
-                      )
-                    })}
-                  </div>
+                  {group.floors.map((floor) => (
+                    <div key={floor.label} className="py-0.5">
+                      {floor.label !== 'Other' && (
+                        <div className="px-3 pt-1 text-[0.6rem] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                          {floor.label}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-3 gap-1 px-1 py-1">
+                        {floor.units.map((s) => {
+                          const isSelected = value === s
+                          return (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => selectSuite(s)}
+                              className={`px-2 py-1.5 text-xs font-semibold rounded-lg text-center transition-all ${
+                                isSelected
+                                  ? 'bg-blue-600 text-white font-bold shadow-sm'
+                                  : 'text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400'
+                              }`}
+                            >
+                              {parseUnitCode(s).unit}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))
             ) : (
               <div className="p-4 text-center">
                 <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
-                  No predefined suite matching "{search}"
+                  No unit matching "{search}"
                 </p>
                 <button
                   type="button"
                   onClick={() => selectSuite(search.trim())}
                   className="px-3 py-1.5 text-xs font-bold rounded-lg bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100"
                 >
-                  Use "{search.trim()}" as Suite #
+                  Use "{search.trim()}" as Unit #
                 </button>
               </div>
             )}
           </div>
 
-          {/* Custom Suite Input Toggle at bottom */}
+          {/* Custom Unit Input Toggle at bottom */}
           <div className="p-2 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800">
             {customMode ? (
               <form onSubmit={handleCustomSubmit} className="flex gap-1.5">
                 <input
                   type="text"
                   autoFocus
-                  placeholder="Enter custom suite..."
+                  placeholder="Enter custom unit..."
                   value={customValue}
                   onChange={(e) => setCustomValue(e.target.value)}
                   className="flex-1 min-h-[34px] px-2.5 py-1 text-xs rounded-lg border border-blue-400 dark:border-blue-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -372,6 +393,9 @@ export default function CorpHeader({ form, setForm, errors, setErrors }) {
               className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
             >
               Unit / Suite # <span className="text-red-500">*</span>
+              <span className="block normal-case font-medium text-[0.65rem] text-slate-400 dark:text-slate-500">
+                Format: 701-1001
+              </span>
             </label>
             {errors.suiteNumber && (
               <span className="text-[0.7rem] text-red-500 font-bold">Required</span>

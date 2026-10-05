@@ -1,3 +1,5 @@
+import { formatUnitCode } from '../lib/buildingUnits'
+
 export default function SuccessCard({ data, onNewInspection }) {
   const row = (label, value) => (
     <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
@@ -65,7 +67,9 @@ export default function SuccessCard({ data, onNewInspection }) {
             </div>
             <div>
               <span className="text-slate-400 uppercase tracking-wider block font-bold text-[0.68rem]">Suite Number</span>
-              <span className="font-extrabold text-sm text-blue-600 dark:text-blue-400">Suite #{data.suiteNumber}</span>
+              <span className="font-extrabold text-sm text-blue-600 dark:text-blue-400">
+                {formatUnitCode(data.suiteNumber)}
+              </span>
             </div>
             <div>
               <span className="text-slate-400 uppercase tracking-wider block font-bold text-[0.68rem]">Inspection Date</span>
