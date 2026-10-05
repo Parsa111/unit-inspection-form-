@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { fetchBuildingUnits, groupUnitsByBuilding, formatUnitCode, parseUnitCode } from '../lib/buildingUnits'
 
-function SuiteDropdown({ value, onChange, error }) {
+function SuiteDropdown({ value, onChange, error, building }) {
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [customMode, setCustomMode] = useState(false)
@@ -55,11 +55,16 @@ function SuiteDropdown({ value, onChange, error }) {
   // Grouped units from the database, split by building
   const groupedUnits = useMemo(() => groupUnitsByBuilding(units), [units])
 
+  const buildingFilteredGroups = useMemo(() => {
+    if (!building || building === 'Other') return groupedUnits
+    return groupedUnits.filter((group) => group.label === building)
+  }, [groupedUnits, building])
+
   // Filtered units
   const filteredGroups = useMemo(() => {
-    if (!search.trim()) return groupedUnits
+    if (!search.trim()) return buildingFilteredGroups
     const query = search.trim().toLowerCase()
-    return groupedUnits
+    return buildingFilteredGroups
       .map((group) => ({
         ...group,
         floors: group.floors
@@ -67,7 +72,7 @@ function SuiteDropdown({ value, onChange, error }) {
           .filter((f) => f.units.length > 0),
       }))
       .filter((group) => group.floors.length > 0)
-  }, [groupedUnits, search])
+  }, [buildingFilteredGroups, search])
 
   const selectSuite = (suite) => {
     onChange(suite)
@@ -369,7 +374,10 @@ export default function CorpHeader({ form, setForm, errors, setErrors }) {
             <select
               id="building"
               value={form.building}
-              onChange={(e) => setForm((f) => ({ ...f, building: e.target.value }))}
+              onChange={(e) => {
+                const newBuilding = e.target.value
+                setForm((f) => ({ ...f, building: newBuilding, suiteNumber: '' }))
+              }}
               className="w-full min-h-[44px] px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all appearance-none cursor-pointer"
             >
               <option>1 Massay</option>
@@ -412,6 +420,7 @@ export default function CorpHeader({ form, setForm, errors, setErrors }) {
               clearErr('suiteNumber')
             }}
             error={errors.suiteNumber}
+            building={form.building}
           />
         </div>
       </div>
