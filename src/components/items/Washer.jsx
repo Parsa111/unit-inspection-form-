@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, CheckPill, TextInput } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, CheckPill, TextInput, PhotoUpload } from '../ui'
 
 export default function Washer({ data, onChange }) {
   const isCompleted = Boolean(data.present)
@@ -83,6 +83,14 @@ export default function Washer({ data, onChange }) {
               value={data.other}
               onChange={(v) => onChange('other', v)}
               placeholder="Drain hose routing, spill tray, floor condition..."
+            />
+          </FullWidth>
+
+          <FullWidth>
+            <PhotoUpload
+              photos={data.photos || []}
+              onAdd={(src) => onChange('photos', [...(data.photos || []), src])}
+              onRemove={(idx) => onChange('photos', (data.photos || []).filter((_, i) => i !== idx))}
             />
           </FullWidth>
         </>

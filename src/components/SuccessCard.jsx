@@ -25,6 +25,8 @@ export default function SuccessCard({ data, onNewInspection }) {
     )
   }
 
+  const photoCount = (photos) => (Array.isArray(photos) ? photos.length : 0)
+
   const formattedTime = data.submittedAt
     ? new Date(data.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : ''
@@ -92,15 +94,36 @@ export default function SuccessCard({ data, onNewInspection }) {
           <div className="space-y-2.5 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/80 border border-slate-200/70 dark:border-slate-800 rounded-2xl p-4">
             <div className="flex justify-between items-center pt-2 first:pt-0">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">01. Partition Walls</span>
-              {statusBadge(data.partitionWalls?.status)}
+              <div className="flex items-center gap-2">
+                {statusBadge(data.partitionWalls?.status)}
+                {photoCount(data.partitionWalls?.photos) > 0 && (
+                  <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    📷 {photoCount(data.partitionWalls?.photos)}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">02. Washer</span>
-              {statusBadge(data.washer?.present)}
+              <div className="flex items-center gap-2">
+                {statusBadge(data.washer?.present)}
+                {photoCount(data.washer?.photos) > 0 && (
+                  <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    📷 {photoCount(data.washer?.photos)}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">03. Dryer</span>
-              {statusBadge(data.dryer?.present)}
+              <div className="flex items-center gap-2">
+                {statusBadge(data.dryer?.present)}
+                {photoCount(data.dryer?.photos) > 0 && (
+                  <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    📷 {photoCount(data.dryer?.photos)}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">04. Air Conditioner(s)</span>
@@ -111,15 +134,34 @@ export default function SuccessCard({ data, onNewInspection }) {
                     Qty: {data.ac.qty}
                   </span>
                 )}
+                {photoCount(data.ac?.photos) > 0 && (
+                  <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    📷 {photoCount(data.ac?.photos)}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">05. Kitchen Taps</span>
-              {statusBadge(data.kitchenTaps?.status)}
+              <div className="flex items-center gap-2">
+                {statusBadge(data.kitchenTaps?.status)}
+                {photoCount(data.kitchenTaps?.photos) > 0 && (
+                  <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    📷 {photoCount(data.kitchenTaps?.photos)}
+                  </span>
+                )}
+              </div>
             </div>
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">06. Pets</span>
-              {statusBadge(data.pets?.allowed || data.pets?.present)}
+              <div className="flex items-center gap-2">
+                {statusBadge(data.pets?.allowed || data.pets?.present)}
+                {photoCount(data.pets?.photos) > 0 && (
+                  <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    📷 {photoCount(data.pets?.photos)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>

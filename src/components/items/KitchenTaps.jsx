@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, TextInput } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, TextInput, PhotoUpload } from '../ui'
 
 export default function KitchenTaps({ data, onChange }) {
   const isCompleted = Boolean(data.status)
@@ -50,6 +50,14 @@ export default function KitchenTaps({ data, onChange }) {
               value={data.other}
               onChange={(v) => onChange('other', v)}
               placeholder="Water pressure, shut-off valve condition, fixture play, aerator..."
+            />
+          </FullWidth>
+
+          <FullWidth>
+            <PhotoUpload
+              photos={data.photos || []}
+              onAdd={(src) => onChange('photos', [...(data.photos || []), src])}
+              onRemove={(idx) => onChange('photos', (data.photos || []).filter((_, i) => i !== idx))}
             />
           </FullWidth>
         </>

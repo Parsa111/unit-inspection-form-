@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, CheckPill, TextInput } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, CheckPill, TextInput, PhotoUpload } from '../ui'
 
 export default function AirConditioners({ data, onChange }) {
   const isCompleted = Boolean(data.present || data.safety)
@@ -101,6 +101,14 @@ export default function AirConditioners({ data, onChange }) {
               />
             </FullWidth>
           )}
+
+          <FullWidth>
+            <PhotoUpload
+              photos={data.photos || []}
+              onAdd={(src) => onChange('photos', [...(data.photos || []), src])}
+              onRemove={(idx) => onChange('photos', (data.photos || []).filter((_, i) => i !== idx))}
+            />
+          </FullWidth>
         </>
       )}
     </ItemCard>

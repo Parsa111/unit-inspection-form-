@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, TextInput } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, TextInput, PhotoUpload } from '../ui'
 
 export default function PartitionWalls({ data, onChange }) {
   const isCompleted = Boolean(data.status)
@@ -51,6 +51,14 @@ export default function PartitionWalls({ data, onChange }) {
               value={data.other}
               onChange={(v) => onChange('other', v)}
               placeholder="Additional comments or findings..."
+            />
+          </FullWidth>
+
+          <FullWidth>
+            <PhotoUpload
+              photos={data.photos || []}
+              onAdd={(src) => onChange('photos', [...(data.photos || []), src])}
+              onRemove={(idx) => onChange('photos', (data.photos || []).filter((_, i) => i !== idx))}
             />
           </FullWidth>
         </>
