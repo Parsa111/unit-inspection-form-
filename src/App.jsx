@@ -6,6 +6,7 @@ import Washer from './components/items/Washer'
 import Dryer from './components/items/Dryer'
 import AirConditioners from './components/items/AirConditioners'
 import KitchenTaps from './components/items/KitchenTaps'
+import Washroom from './components/items/Washroom'
 import Pets from './components/items/Pets'
 import SignatureSection from './components/SignatureSection'
 import SuccessCard from './components/SuccessCard'
@@ -29,6 +30,7 @@ const defaultForm = {
   dryer: { present: '', kitchen: false, other: '', photos: [] },
   ac: { present: '', fixed: false, portable: false, qty: '', safety: '', other: '', photos: [] },
   kitchenTaps: { status: '', pipesNote: '', other: '', photos: [] },
+  washroom: { toiletCondition: '', toiletComment: '', tapsLeaking: '', tapsComment: '', vanityLeaking: '', vanityComment: '', fanPresent: '', photos: [] },
   pets: { present: '', allowed: '', details: '', other: '', photos: [] },
   inspectorName: '',
   inspectorDate: '',
@@ -85,6 +87,7 @@ export default function App() {
     Boolean(form.dryer.present),
     Boolean(form.ac.present || form.ac.safety),
     Boolean(form.kitchenTaps.status),
+    Boolean(form.washroom.toiletCondition || form.washroom.tapsLeaking || form.washroom.vanityLeaking || form.washroom.fanPresent),
     Boolean(form.pets.present || form.pets.allowed),
   ].filter(Boolean).length
 
@@ -160,8 +163,8 @@ export default function App() {
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           onReset={null}
-          completedCount={7}
-          totalCount={7}
+          completedCount={8}
+          totalCount={8}
         />
         <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <SuccessCard data={submittedData} onNewInspection={handleNewInspection} />
@@ -177,7 +180,7 @@ export default function App() {
         setDarkMode={setDarkMode}
         onReset={handleReset}
         completedCount={completedSections}
-        totalCount={7}
+        totalCount={8}
       />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-28">
@@ -194,7 +197,7 @@ export default function App() {
           {/* Section Divider with label */}
           <div className="flex items-center gap-3 pt-2">
             <span className="text-[0.7rem] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">
-              Physical In-Suite Scope Items (1–6)
+              Physical In-Suite Scope Items (1–7)
             </span>
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           </div>
@@ -229,7 +232,13 @@ export default function App() {
             onChange={(f, v) => update('kitchenTaps', f, v)}
           />
 
-          {/* 06 — Pets */}
+          {/* 06 — Washroom */}
+          <Washroom
+            data={form.washroom}
+            onChange={(f, v) => update('washroom', f, v)}
+          />
+
+          {/* 07 — Pets */}
           <Pets
             data={form.pets}
             onChange={(f, v) => update('pets', f, v)}
@@ -238,12 +247,12 @@ export default function App() {
           {/* Section Divider with label */}
           <div className="flex items-center gap-3 pt-2">
             <span className="text-[0.7rem] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">
-              Inspector Sign-Off (Item 7)
+              Inspector Sign-Off (Item 8)
             </span>
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           </div>
 
-          {/* 07 — Signature */}
+          {/* 08 — Signature */}
           <SignatureSection
             ref={signatureRef}
             inspectorName={form.inspectorName}
