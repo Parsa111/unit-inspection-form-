@@ -88,7 +88,7 @@ export default function SuccessCard({ data, onNewInspection }) {
         <div>
           <h4 className="text-[0.72rem] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3 flex items-center justify-between">
             <span>Verified In-Suite Scope</span>
-            <span className="text-emerald-600 dark:text-emerald-400 font-mono">7 of 7 Checked</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-mono">8 of 8 Checked</span>
           </h4>
 
           <div className="space-y-2.5 bg-white dark:bg-slate-900 divide-y divide-slate-100 dark:divide-slate-800/80 border border-slate-200/70 dark:border-slate-800 rounded-2xl p-4">
@@ -159,7 +159,18 @@ export default function SuccessCard({ data, onNewInspection }) {
               </div>
             </div>
             <div className="flex justify-between items-center pt-2">
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">07. Pets</span>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">07. Balcony</span>
+              <div className="flex items-center gap-2">
+                {statusBadge(data.balcony?.damage)}
+                {photoCount(data.balcony?.photos) > 0 && (
+                  <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
+                    📷 {photoCount(data.balcony?.photos)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">08. Pets</span>
               <div className="flex items-center gap-2">
                 {statusBadge(data.pets?.allowed || data.pets?.present)}
                 {photoCount(data.pets?.photos) > 0 && (

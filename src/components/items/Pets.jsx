@@ -5,7 +5,7 @@ export default function Pets({ data, onChange }) {
 
   return (
     <ItemCard
-      num={6}
+      num={8}
       title="Pets"
       pink
       hint="Condo declaration pet restriction and registration compliance"
