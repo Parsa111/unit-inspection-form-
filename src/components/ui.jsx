@@ -167,18 +167,32 @@ export function PhotoUpload({ photos = [], onAdd, onRemove }) {
   const cameraInputRef = useRef(null)
   const galleryInputRef = useRef(null)
 
+  const formatTimestamp = (date = new Date()) => {
+    const d = new Date(date)
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    const hours = String(d.getHours()).padStart(2, '0')
+    const minutes = String(d.getMinutes()).padStart(2, '0')
+    const seconds = String(d.getSeconds()).padStart(2, '0')
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  }
+
   const handleFileSelect = (e, targetRef) => {
     const files = Array.from(e.target.files || [])
     files.forEach((file) => {
       if (!file.type.startsWith('image/')) return
       const reader = new FileReader()
       reader.onload = (ev) => {
-        onAdd(ev.target.result)
+        onAdd({ src: ev.target.result, timestamp: formatTimestamp() })
       }
       reader.readAsDataURL(file)
     })
     if (targetRef.current) targetRef.current.value = ''
   }
+
+  const getPhotoSrc = (photo) => (typeof photo === 'string' ? photo : photo?.src)
+  const getPhotoTimestamp = (photo) => (typeof photo === 'string' ? null : photo?.timestamp)
 
   return (
     <div className="space-y-2">
@@ -192,18 +206,27 @@ export function PhotoUpload({ photos = [], onAdd, onRemove }) {
       </div>
 
       <div className="grid grid-cols-3 gap-2">
-        {photos.map((src, idx) => (
-          <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-            <img src={src} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-            <button
-              type="button"
-              onClick={() => onRemove(idx)}
-              className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-            >
-              ✕
-            </button>
-          </div>
-        ))}
+        {photos.map((photo, idx) => {
+          const src = getPhotoSrc(photo)
+          const timestamp = getPhotoTimestamp(photo)
+          return (
+            <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+              <img src={src} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+              {timestamp && (
+                <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/70 text-white text-[0.55rem] font-mono rounded select-none whitespace-nowrap">
+                  {timestamp}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => onRemove(idx)}
+                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+          )
+        })}
 
         <button
           type="button"
