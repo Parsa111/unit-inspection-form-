@@ -63,7 +63,17 @@ export default function AirConditioners({ data, onChange }) {
               min="0"
               max="20"
               value={data.qty}
-              onChange={(e) => onChange('qty', e.target.value)}
+              onChange={(e) => {
+                const raw = e.target.value
+                if (raw === '') {
+                  onChange('qty', 1)
+                  return
+                }
+                const n = Number(raw)
+                if (Number.isFinite(n)) {
+                  onChange('qty', Math.max(0, Math.min(20, Math.round(n))))
+                }
+              }}
               placeholder="e.g. 4"
               className="min-h-[44px] px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all w-32"
             />

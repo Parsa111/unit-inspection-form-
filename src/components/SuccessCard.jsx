@@ -129,7 +129,7 @@ export default function SuccessCard({ data, onNewInspection }) {
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">04. Air Conditioner(s)</span>
               <div className="flex items-center gap-2">
                 {statusBadge(data.ac?.safety)}
-                {data.ac?.qty && (
+                {data.ac?.present === 'Yes' && data.ac?.qty !== '' && data.ac?.qty != null && (
                   <span className="text-xs font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                     Qty: {data.ac.qty}
                   </span>

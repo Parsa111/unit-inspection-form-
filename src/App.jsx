@@ -29,7 +29,7 @@ const defaultForm = {
   partitionWalls: { status: '', details: '', other: '', photos: [] },
   washer: { present: '', portable: false, direct: false, kitchen: false, checkValves: false, notes: '', other: '', photos: [] },
   dryer: { present: '', kitchen: false, other: '', photos: [] },
-  ac: { present: '', fixed: false, portable: false, qty: '', safety: '', other: '', photos: [] },
+  ac: { present: '', fixed: false, portable: false, qty: 1, safety: '', other: '', photos: [] },
   kitchenTaps: { status: '', pipesNote: '', other: '', photos: [] },
   washroom: { toiletCondition: '', toiletComment: '', tapsLeaking: '', tapsComment: '', vanityLeaking: '', vanityComment: '', fanPresent: '', photos: [] },
   balcony: { damage: '', comment: '', photos: [] },
