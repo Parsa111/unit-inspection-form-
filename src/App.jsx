@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Header from './components/Header'
 import CorpHeader from './components/CorpHeader'
+import ExteriorSuiteDoor from './components/items/ExteriorSuiteDoor'
 import PartitionWalls from './components/items/PartitionWalls'
 import Washer from './components/items/Washer'
 import Dryer from './components/items/Dryer'
@@ -26,6 +27,7 @@ const defaultForm = {
   inspectionDate: '',
   building: '5 Massey',
   suiteNumber: '',
+  exteriorSuiteDoor: { altered: '', alterations: {}, comments: '', photos: [] },
   partitionWalls: { status: '', details: '', other: '', photos: [] },
   washer: { present: '', portable: false, direct: false, kitchen: false, checkValves: false, notes: '', other: '', photos: [] },
   dryer: { present: '', kitchen: false, other: '', photos: [] },
@@ -81,9 +83,10 @@ export default function App() {
     }
   }
 
-  // Calculate completion count (9 total sections)
+  // Calculate completion count (10 total sections)
   const completedSections = [
     Boolean(form.suiteNumber.trim()),
+    Boolean(form.exteriorSuiteDoor.altered),
     Boolean(form.partitionWalls.status),
     Boolean(form.washer.present),
     Boolean(form.dryer.present),
@@ -166,8 +169,8 @@ export default function App() {
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           onReset={null}
-          completedCount={9}
-          totalCount={9}
+          completedCount={10}
+          totalCount={10}
         />
         <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <SuccessCard data={submittedData} onNewInspection={handleNewInspection} />
@@ -183,18 +186,24 @@ export default function App() {
         setDarkMode={setDarkMode}
         onReset={handleReset}
         completedCount={completedSections}
-        totalCount={9}
+        totalCount={10}
       />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-28">
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           
           {/* Corp Header & Meta Information */}
-          <CorpHeader
+<CorpHeader
             form={form}
             setForm={setForm}
             errors={errors}
             setErrors={setErrors}
+          />
+
+          {/* 00 — Exterior Suite Door (can be done anytime, no entry permission needed) */}
+          <ExteriorSuiteDoor
+            data={form.exteriorSuiteDoor}
+            onChange={(f, v) => update('exteriorSuiteDoor', f, v)}
           />
 
           {/* Section Divider with label */}
