@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, TextInput, PhotoUpload, CheckPill } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, TextInput, PhotoUpload, CheckPill, SelectInput } from '../ui'
 
 export default function ExteriorSuiteDoor({ data, onChange }) {
   const isCompleted = Boolean(data.altered)
@@ -39,22 +39,58 @@ export default function ExteriorSuiteDoor({ data, onChange }) {
             <FieldLabel>Alteration Types (check all that apply)</FieldLabel>
             <div className="flex flex-wrap gap-2">
               <CheckPill
-                label="Stickers"
-                checked={data.alterations?.stickers || false}
-                onChange={(v) => onChange('alterations', { ...data.alterations, stickers: v })}
-              />
-              <CheckPill
-                label="Cameras"
-                checked={data.alterations?.cameras || false}
-                onChange={(v) => onChange('alterations', { ...data.alterations, cameras: v })}
+                label="Camera"
+                checked={data.alterations?.camera || false}
+                onChange={(v) => onChange('alterations', { ...data.alterations, camera: v })}
               />
               <CheckPill
                 label="Locks"
                 checked={data.alterations?.locks || false}
                 onChange={(v) => onChange('alterations', { ...data.alterations, locks: v })}
               />
+              <CheckPill
+                label="Decorations"
+                checked={data.alterations?.decorations || false}
+                onChange={(v) => onChange('alterations', { ...data.alterations, decorations: v })}
+              />
+              <CheckPill
+                label="Door bell"
+                checked={data.alterations?.doorBell || false}
+                onChange={(v) => onChange('alterations', { ...data.alterations, doorBell: v })}
+              />
+              <CheckPill
+                label="Painted"
+                checked={data.alterations?.painted || false}
+                onChange={(v) => onChange('alterations', { ...data.alterations, painted: v })}
+              />
+              <CheckPill
+                label="Damaged"
+                checked={data.alterations?.damaged || false}
+                onChange={(v) => onChange('alterations', { ...data.alterations, damaged: v })}
+              />
             </div>
           </FullWidth>
+
+          {(data.alterations?.locks || data.alterations?.decorations || data.alterations?.doorBell || data.alterations?.painted || data.alterations?.damaged || data.alterations?.camera) && (
+            <FullWidth>
+              <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                {data.alterations?.locks && (
+                  <SelectInput
+                    id="esd_lock_type"
+                    label="Lock Type"
+                    value={data.lockType || ''}
+                    onChange={(v) => onChange('lockType', v)}
+                    options={[
+                      { value: 'leverSet', label: 'Lever Set' },
+                      { value: 'mainSuiteDoorLock', label: 'Main Suite Door Lock' },
+                      { value: 'doorCloser', label: 'Door Closer' },
+                    ]}
+                    placeholder="Select lock type"
+                  />
+                )}
+              </div>
+            </FullWidth>
+          )}
 
           <FullWidth>
             <TextInput
