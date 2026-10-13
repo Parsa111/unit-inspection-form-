@@ -11,6 +11,7 @@ import Washroom from './components/items/Washroom'
 import Balcony from './components/items/Balcony'
 import Windows from './components/items/Windows'
 import Pets from './components/items/Pets'
+import EBikes from './components/items/EBikes'
 import SignatureSection from './components/SignatureSection'
 import SuccessCard from './components/SuccessCard'
 
@@ -38,6 +39,7 @@ const defaultForm = {
   balcony: { damage: '', comment: '', photos: [] },
   windows: { damage: '', comments: '', photos: [] },
   pets: { present: '', allowed: '', details: '', other: '', photos: [] },
+  ebikes: { present: '', count: '', location: '', photos: [] },
   inspectorName: '',
   inspectorDate: '',
 }
@@ -85,7 +87,7 @@ export default function App() {
     }
   }
 
-  // Calculate completion count (11 total sections)
+  // Calculate completion count (12 total sections)
   const completedSections = [
     Boolean(form.suiteNumber.trim()),
     Boolean(form.exteriorSuiteDoor.altered),
@@ -98,6 +100,7 @@ export default function App() {
     Boolean(form.balcony.damage),
     Boolean(form.windows.damage),
     Boolean(form.pets.present || form.pets.allowed),
+    Boolean(form.ebikes.present),
   ].filter(Boolean).length
 
   const validate = () => {
@@ -172,8 +175,8 @@ export default function App() {
           darkMode={darkMode}
           setDarkMode={setDarkMode}
           onReset={null}
-          completedCount={11}
-          totalCount={11}
+          completedCount={12}
+          totalCount={12}
         />
         <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <SuccessCard data={submittedData} onNewInspection={handleNewInspection} />
@@ -189,7 +192,7 @@ export default function App() {
         setDarkMode={setDarkMode}
         onReset={handleReset}
         completedCount={completedSections}
-        totalCount={11}
+        totalCount={12}
       />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-28">
@@ -269,6 +272,12 @@ export default function App() {
           <Pets
             data={form.pets}
             onChange={(f, v) => update('pets', f, v)}
+          />
+
+          {/* 10 — E-Bikes */}
+          <EBikes
+            data={form.ebikes}
+            onChange={(f, v) => update('ebikes', f, v)}
           />
 
           {/* Section Divider with label */}

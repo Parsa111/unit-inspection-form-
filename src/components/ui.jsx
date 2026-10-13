@@ -74,6 +74,47 @@ export function TextInput({ id, label, value, onChange, placeholder }) {
   )
 }
 
+// Number Input - plain number field (matches Air Conditioner style)
+export function NumberInput({ id, label, value, onChange, min = 0, max = 99, step = 1, placeholder }) {
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      <label htmlFor={id} className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        {label}
+      </label>
+      <input
+        id={id}
+        type="number"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => {
+          const raw = e.target.value
+          if (raw === '') {
+            onChange('')
+            return
+          }
+          const n = Number(raw)
+          if (Number.isFinite(n)) {
+            onChange(Math.max(min, Math.min(max, Math.round(n))))
+          }
+        }}
+        onBlur={(e) => {
+          const raw = e.target.value
+          if (raw !== '') {
+            const n = Number(raw)
+            if (Number.isFinite(n)) {
+              onChange(Math.max(min, Math.min(max, Math.round(n))))
+            }
+          }
+        }}
+        placeholder={placeholder}
+        className="min-h-[44px] px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all w-32"
+      />
+    </div>
+  )
+}
+
 // Card wrapper for each inspection item
 export function ItemCard({ num, title, pink, hint, handwritten, isCompleted, children }) {
   return (
