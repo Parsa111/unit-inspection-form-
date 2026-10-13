@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 
 // Segmented radio toggle with modern tactile feel
 export function SegmentedControl({ name, options, value, onChange }) {
@@ -166,6 +166,7 @@ export function FieldLabel({ children }) {
 export function PhotoUpload({ photos = [], onAdd, onRemove }) {
   const cameraInputRef = useRef(null)
   const galleryInputRef = useRef(null)
+  const [expandedPhoto, setExpandedPhoto] = useState(null)
 
   const formatTimestamp = (date = new Date()) => {
     const d = new Date(date)
@@ -195,94 +196,130 @@ export function PhotoUpload({ photos = [], onAdd, onRemove }) {
   const getPhotoTimestamp = (photo) => (typeof photo === 'string' ? null : photo?.timestamp)
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          Problem Photos
-        </span>
-        <span className="text-[0.65rem] font-mono text-slate-400 dark:text-slate-500">
-          {photos.length} captured
-        </span>
+    <>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Problem Photos
+          </span>
+          <span className="text-[0.65rem] font-mono text-slate-400 dark:text-slate-500">
+            {photos.length} captured
+          </span>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {photos.map((photo, idx) => {
+            const src = getPhotoSrc(photo)
+            const timestamp = getPhotoTimestamp(photo)
+            return (
+              <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-zoom-in">
+                <img
+                  src={src}
+                  alt={`Photo ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  onClick={() => setExpandedPhoto(src)}
+                />
+                {timestamp && (
+                  <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/70 text-white text-[0.55rem] font-mono rounded select-none whitespace-nowrap">
+                    {timestamp}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRemove(idx)
+                  }}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                >
+                  ✕
+                </button>
+              </div>
+            )
+          })}
+
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="aspect-square rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-colors flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            <span className="text-[0.6rem] font-bold uppercase tracking-wider">Add</span>
+          </button>
+        </div>
+
+        {/* Camera input - opens device camera on mobile/tablet */}
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={(e) => handleFileSelect(e, cameraInputRef)}
+          className="hidden"
+        />
+
+        {/* Gallery input - picks from photo library / file explorer */}
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => handleFileSelect(e, galleryInputRef)}
+          className="hidden"
+        />
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 min-h-[40px] px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-xs font-bold transition-colors active:scale-[0.98]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h2.5a1 1 0 00.9-.5l.7-1a1 1 0 01.9-.5h4a1 1 0 01.9.5l.7 1a1 1 0 00.9.5H19a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <circle cx="12" cy="13" r="3" fill="none" />
+            </svg>
+            Take Photo
+          </button>
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 min-h-[40px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors active:scale-[0.98]"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4-4 4 4 4-4 4 4M4 6h16" />
+            </svg>
+            From Gallery
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        {photos.map((photo, idx) => {
-          const src = getPhotoSrc(photo)
-          const timestamp = getPhotoTimestamp(photo)
-          return (
-            <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
-              <img src={src} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-              {timestamp && (
-                <div className="absolute bottom-1 right-1 px-1.5 py-0.5 bg-black/70 text-white text-[0.55rem] font-mono rounded select-none whitespace-nowrap">
-                  {timestamp}
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => onRemove(idx)}
-                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-600 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-              >
-                ✕
-              </button>
-            </div>
-          )
-        })}
-
-        <button
-          type="button"
-          onClick={() => cameraInputRef.current?.click()}
-          className="aspect-square rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 hover:border-blue-500 dark:hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 transition-colors flex flex-col items-center justify-center gap-1 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400"
+      {/* Lightbox Modal */}
+      {expandedPhoto && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setExpandedPhoto(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Expanded photo view"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-          </svg>
-          <span className="text-[0.6rem] font-bold uppercase tracking-wider">Add</span>
-        </button>
-      </div>
-
-      {/* Camera input - opens device camera on mobile/tablet */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={(e) => handleFileSelect(e, cameraInputRef)}
-        className="hidden"
-      />
-
-      {/* Gallery input - picks from photo library / file explorer */}
-      <input
-        ref={galleryInputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        onChange={(e) => handleFileSelect(e, galleryInputRef)}
-        className="hidden"
-      />
-
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => cameraInputRef.current?.click()}
-          className="flex items-center justify-center gap-2 min-h-[40px] px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white text-xs font-bold transition-colors active:scale-[0.98]"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h2.5a1 1 0 00.9-.5l.7-1a1 1 0 01.9-.5h4a1 1 0 01.9.5l.7 1a1 1 0 00.9.5H19a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <circle cx="12" cy="13" r="3" fill="none" />
-          </svg>
-          Take Photo
-        </button>
-        <button
-          type="button"
-          onClick={() => galleryInputRef.current?.click()}
-          className="flex items-center justify-center gap-2 min-h-[40px] px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors active:scale-[0.98]"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4-4 4 4 4-4 4 4M4 6h16" />
-          </svg>
-          From Gallery
-        </button>
-      </div>
-    </div>
+          <button
+            type="button"
+            onClick={() => setExpandedPhoto(null)}
+            className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-xl font-bold flex items-center justify-center transition-colors"
+            aria-label="Close expanded photo"
+          >
+            ✕
+          </button>
+          <img
+            src={expandedPhoto}
+            alt="Expanded photo"
+            className="max-w-full max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
   )
 }
