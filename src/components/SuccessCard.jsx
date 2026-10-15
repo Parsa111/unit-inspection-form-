@@ -31,6 +31,11 @@ export default function SuccessCard({ data, onNewInspection }) {
     ? new Date(data.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : ''
 
+  // Prefer the uploaded URL (stored in Supabase Storage, not the DB) when
+  // available; fall back to the local data URL for offline-only submissions.
+  const signatureSrc = data.supabase?.signatureUrl || data.signatureUrl || data.signatureData
+  const savedToDb = Boolean(data.supabase?.rows?.length)
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-800 shadow-xl overflow-hidden transition-all">
       

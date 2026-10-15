@@ -14,6 +14,7 @@ import Pets from './components/items/Pets'
 import EBikes from './components/items/EBikes'
 import SignatureSection from './components/SignatureSection'
 import SuccessCard from './components/SuccessCard'
+import { submitUnitInspection } from './lib/supabase'
 
 const STORAGE_KEY = 'ycc76_inspection_draft'
 
@@ -51,6 +52,8 @@ export default function App() {
   })
   const [submitted, setSubmitted] = useState(false)
   const [submittedData, setSubmittedData] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const [errors, setErrors] = useState({})
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ycc76_theme') === 'dark')
   const signatureRef = useRef(null)
@@ -112,7 +115,7 @@ export default function App() {
     return Object.keys(e).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) {
       // Smooth scroll to the first element with error
@@ -132,7 +135,7 @@ export default function App() {
       submittedAt: new Date().toISOString(),
     }
 
-    // Persist submission history
+    // Persist submission history (always, as an offline fallback)
     try {
       const all = JSON.parse(localStorage.getItem('ycc76_submissions') || '[]')
       all.unshift(submission)
@@ -140,7 +143,26 @@ export default function App() {
       localStorage.removeItem(STORAGE_KEY)
     } catch {}
 
-    setSubmittedData(submission)
+    setSubmitting(true)
+    setSubmitError('')
+
+    try {
+      // Upload images to Supabase Storage (stores URLs, not blobs) and
+      // insert the inspection row into the database.
+      const result = await submitUnitInspection(form, sigData)
+      setSubmittedData({ ...submission, supabase: result })
+    } catch (err) {
+      // Network/storage failure — keep the locally saved submission so the
+      // data is not lost; surface the error to the inspector.
+      console.error('Supabase submit failed:', err)
+      setSubmitError(
+        err?.message || 'Could not save to the database. Your report was kept locally.'
+      )
+      setSubmittedData(submission)
+    } finally {
+      setSubmitting(false)
+    }
+
     setSubmitted(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -302,16 +324,31 @@ export default function App() {
           <div className="pt-4">
             <button
               type="submit"
-              className="group relative w-full py-4 px-6 bg-gradient-to-r from-navy-700 via-navy-600 to-blue-600 hover:from-navy-800 hover:via-navy-700 hover:to-blue-700 text-white text-base sm:text-lg font-bold rounded-2xl shadow-xl shadow-blue-900/10 hover:shadow-2xl hover:shadow-blue-900/20 active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer overflow-hidden"
+              disabled={submitting}
+              className={`group relative w-full py-4 px-6 bg-gradient-to-r from-navy-700 via-navy-600 to-blue-600 hover:from-navy-800 hover:via-navy-700 hover:to-blue-700 text-white text-base sm:text-lg font-bold rounded-2xl shadow-xl shadow-blue-900/10 hover:shadow-2xl hover:shadow-blue-900/20 active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-3 cursor-pointer overflow-hidden ${submitting ? 'opacity-75 cursor-not-allowed' : ''}`}
             >
-              <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold group-hover:scale-110 transition-transform">
-                ✓
+              <div className={`w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold group-hover:scale-110 transition-transform ${submitting ? 'animate-spin' : ''}`}>
+                {submitting ? (
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                    <path className="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  '✓'
+                )}
               </div>
-              <span className="tracking-wide">Submit Unit Inspection Report</span>
+              <span className="tracking-wide">
+                {submitting ? 'Saving to Database…' : 'Submit Unit Inspection Report'}
+              </span>
             </button>
             <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2 font-medium">
               Transmits recorded conditions to York Condominium Corporation No. 76 records
             </p>
+            {submitError && (
+              <p className="text-center text-xs font-bold text-red-600 dark:text-red-400 mt-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900">
+                ⚠ {submitError}
+              </p>
+            )}
           </div>
 
         </form>
