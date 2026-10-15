@@ -226,6 +226,71 @@ export function SelectInput({ id, label, value, onChange, options, placeholder }
   )
 }
 
+// Bake a timestamp badge into the image pixels so it travels with the
+// picture wherever it is displayed or saved (lightbox, downloads, etc.).
+const bakeTimestampIntoImage = (img, timestamp) => {
+  return new Promise((resolve) => {
+    try {
+      if (!img.naturalWidth || !img.naturalHeight) {
+        resolve(null)
+        return
+      }
+      // Cap dimensions to keep data URLs and canvas memory reasonable.
+      const MAX_DIM = 1600
+      let w = img.naturalWidth
+      let h = img.naturalHeight
+      if (w > MAX_DIM || h > MAX_DIM) {
+        const ratio = Math.min(MAX_DIM / w, MAX_DIM / h)
+        w = Math.round(w * ratio)
+        h = Math.round(h * ratio)
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      ctx.imageSmoothingEnabled = true
+      ctx.drawImage(img, 0, 0, w, h)
+
+      // Bottom-right badge, styled to match the on-page overlay.
+      const fontSize = Math.round(Math.min(w, h) * 0.04)
+      ctx.font = `700 ${fontSize}px ui-monospace, monospace`
+      ctx.textBaseline = 'bottom'
+      ctx.textAlign = 'right'
+      const metrics = ctx.measureText(timestamp)
+      const textW = Math.round(metrics.width)
+      const pad = Math.round(fontSize * 0.32)
+      const textX = w - pad
+      const textY = h - pad
+      const bgX = textX - textW - pad
+      const bgY = textY - fontSize - pad
+      const bgW = textW + pad * 2
+      const bgH = fontSize + pad * 2
+      const radius = Math.max(2, Math.round(fontSize * 0.25))
+
+      ctx.fillStyle = 'rgba(0,0,0,0.65)'
+      ctx.beginPath()
+      ctx.moveTo(bgX + radius, bgY)
+      ctx.lineTo(bgX + bgW - radius, bgY)
+      ctx.quadraticCurveTo(bgX + bgW, bgY, bgX + bgW, bgY + radius)
+      ctx.lineTo(bgX + bgW, bgY + bgH - radius)
+      ctx.quadraticCurveTo(bgX + bgW, bgY + bgH, bgX + bgW - radius, bgY + bgH)
+      ctx.lineTo(bgX + radius, bgY + bgH)
+      ctx.quadraticCurveTo(bgX, bgY + bgH, bgX, bgY + bgH - radius)
+      ctx.lineTo(bgX, bgY + radius)
+      ctx.quadraticCurveTo(bgX, bgY, bgX + radius, bgY)
+      ctx.fill()
+
+      ctx.fillStyle = '#ffffff'
+      ctx.fillText(timestamp, textX, textY)
+
+      resolve(canvas.toDataURL('image/jpeg', 0.92))
+    } catch {
+      resolve(null)
+    }
+  })
+}
+
 // Photo capture/upload component with camera support
 export function PhotoUpload({ photos = [], onAdd, onRemove }) {
   const cameraInputRef = useRef(null)
@@ -249,7 +314,16 @@ export function PhotoUpload({ photos = [], onAdd, onRemove }) {
       if (!file.type.startsWith('image/')) return
       const reader = new FileReader()
       reader.onload = (ev) => {
-        onAdd({ src: ev.target.result, timestamp: formatTimestamp() })
+        const timestamp = formatTimestamp()
+        const img = new Image()
+        img.onload = () => {
+          // Bake the timestamp into the image pixels so it persists on the
+          // picture itself (visible when expanded + included when saved).
+          bakeTimestampIntoImage(img, timestamp).then((baked) => {
+            onAdd({ src: baked || ev.target.result, timestamp })
+          })
+        }
+        img.src = ev.target.result
       }
       reader.readAsDataURL(file)
     })
