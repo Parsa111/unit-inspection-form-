@@ -11,10 +11,10 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-const SUPABASE_URL =
+export const SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL || 'https://oeretbscjmphptlytbhw.supabase.co'
 
-const SUPABASE_ANON_KEY =
+export const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lcmV0YnNjam1waHB0bHl0Ymh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNTU2MDksImV4cCI6MjEwNjczMTYwOX0.xozfH5GPqsSZtMSQQqKivtm0RFXkT9zmrOCXZzlXuuM'
 
@@ -168,7 +168,7 @@ export async function submitInspection(payload) {
 /**
  * Convenience helper: upload images + insert row in one call.
  */
-export async function submitUnitInspection(form, signatureDataUrl) {
+export async function submitUnitInspection(form, signatureDataUrl, pdfUrl = null) {
   const { photoUrls, signatureUrl } = await uploadAllImages(form, signatureDataUrl)
 
   // Create a sanitized form for storage: replace photo arrays with public URLs
@@ -191,8 +191,10 @@ export async function submitUnitInspection(form, signatureDataUrl) {
     inspector_name: form.inspectorName || null,
     inspector_date: form.inspectorDate || null,
     signature_url: signatureUrl,
+    pdf_url: pdfUrl,
     data: {
       ...sanitizedForm,
+      pdf_url: pdfUrl,
       submittedAt: new Date().toISOString(),
     },
     submitted_at: new Date().toISOString(),

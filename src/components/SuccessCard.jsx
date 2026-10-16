@@ -209,14 +209,27 @@ export default function SuccessCard({ data, onNewInspection }) {
         )}
 
         {/* Start New Inspection */}
-        <button
-          type="button"
-          onClick={onNewInspection}
-          className="w-full py-4 bg-gradient-to-r from-navy-700 via-navy-600 to-blue-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:from-navy-800 hover:to-blue-700 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-base cursor-pointer"
-        >
-          <span>＋</span>
-          <span>Start New Inspection</span>
-        </button>
+        <div className="flex flex-col gap-3">
+          {data.supabase?.pdfUrl && (
+            <a
+              href={data.supabase.pdfUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-base cursor-pointer"
+            >
+              <span>⬇</span>
+              <span>Download PDF Report</span>
+            </a>
+          )}
+          <button
+            type="button"
+            onClick={onNewInspection}
+            className="w-full py-4 bg-gradient-to-r from-navy-700 via-navy-600 to-blue-600 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:from-navy-800 hover:to-blue-700 active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-base cursor-pointer"
+          >
+            <span>＋</span>
+            <span>Start New Inspection</span>
+          </button>
+        </div>
 
       </div>
     </div>

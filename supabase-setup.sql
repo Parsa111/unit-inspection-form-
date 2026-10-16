@@ -29,8 +29,9 @@ CREATE TABLE unit_inspections (
    inspector_date  date,
    signature_url   text,
    data            jsonb NOT NULL DEFAULT '{}'::jsonb,
-   submitted_at    timestamptz NOT NULL default now()
-);
+    submitted_at    timestamptz NOT NULL default now(),
+    pdf_url         text
+ );
 
 -- 4) Row Level Security
 ALTER TABLE unit_inspections ENABLE ROW LEVEL SECURITY;
@@ -66,6 +67,9 @@ CREATE POLICY "inspection_images_anon_update"
    TO anon
    USING (bucket_id = 'inspection-images')
    WITH CHECK (bucket_id = 'inspection-images');
+
+-- 5.1) Add PDF URL column (idempotent)
+ALTER TABLE unit_inspections ADD COLUMN IF NOT EXISTS pdf_url text;
 
 -- 6) Helpful indexes
 CREATE INDEX IF NOT EXISTS idx_unit_inspections_submitted_at

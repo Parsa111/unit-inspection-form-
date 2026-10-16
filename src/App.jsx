@@ -15,6 +15,7 @@ import EBikes from './components/items/EBikes'
 import SignatureSection from './components/SignatureSection'
 import SuccessCard from './components/SuccessCard'
 import { submitUnitInspection } from './lib/supabase'
+import { generateInspectionPdf, uploadPdf } from './lib/pdfReport'
 
 const STORAGE_KEY = 'ycc76_inspection_draft'
 
@@ -147,10 +148,20 @@ export default function App() {
     setSubmitError('')
 
     try {
+      // Generate PDF report and upload first, so pdf_url is stored with the row.
+      let pdfUrl = null
+      try {
+        const blob = await generateInspectionPdf(submission)
+        const fileName = `report-${Date.now()}.pdf`
+        pdfUrl = await uploadPdf(blob, fileName)
+      } catch (e) {
+        console.error('PDF generation/upload failed:', e)
+      }
+
       // Upload images to Supabase Storage (stores URLs, not blobs) and
       // insert the inspection row into the database.
-      const result = await submitUnitInspection(form, sigData)
-      setSubmittedData({ ...submission, supabase: result })
+      const result = await submitUnitInspection(form, sigData, pdfUrl)
+      setSubmittedData({ ...submission, supabase: { ...result, pdfUrl } })
     } catch (err) {
       // Network/storage failure — keep the locally saved submission so the
       // data is not lost; surface the error to the inspector.
