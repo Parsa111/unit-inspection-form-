@@ -9,6 +9,8 @@
  *     full form data + the generated image URLs.
  */
 
+import { createClient } from '@supabase/supabase-js'
+
 const SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL || 'https://oeretbscjmphptlytbhw.supabase.co'
 
@@ -17,6 +19,8 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lcmV0YnNjam1waHB0bHl0Ymh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTExNTU2MDksImV4cCI6MjEwNjczMTYwOX0.xozfH5GPqsSZtMSQQqKivtm0RFXkT9zmrOCXZzlXuuM'
 
 export const BUCKET = 'inspection-images'
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 const restHeaders = {
   apikey: SUPABASE_ANON_KEY,
@@ -142,7 +146,6 @@ export async function submitInspection(payload) {
   const text = await res.text()
 
   if (!res.ok) {
-    // Try to parse the error response as JSON to get more details
     let errorMessage = text
     try {
       const errorJson = JSON.parse(text)
@@ -150,20 +153,15 @@ export async function submitInspection(payload) {
         errorMessage = 'Database table "unit_inspections" does not exist. Please run the SQL setup in your Supabase project (see supabase-setup.sql).'
       }
     } catch {
-      // If we can't parse the JSON, use the text as is
+      errorMessage = text
     }
     throw new Error(`Supabase insert failed (${res.status}): ${errorMessage}`)
-  }
-
-  // Handle successful response
-  if (text === '') {
-    throw new Error('Empty response from Supabase')
   }
 
   try {
     return JSON.parse(text)
   } catch {
-    throw new Error(`Failed to parse JSON response from Supabase: ${text}`)
+    return { success: true }
   }
 }
 
@@ -202,4 +200,42 @@ export async function submitUnitInspection(form, signatureDataUrl) {
 
   const rows = await submitInspection(payload)
   return { rows, photoUrls, signatureUrl }
+}
+
+/**
+ * Subscribe to real-time changes on the `unit_inspections` table.
+ *
+ * @param {object} opts
+ * @param {function} opts.onInsert - called with the new row on INSERT
+ * @param {function} opts.onUpdate - called with the updated row on UPDATE
+ * @param {function} opts.onDelete - called with the deleted row on DELETE
+ * @returns {function} unsubscribe
+ *
+ * Requires Realtime to be enabled for `unit_inspections` in the Supabase
+ * Dashboard (Database → Replication → Realtime) and a SELECT policy for
+ * the anon role (already present in supabase-setup.sql).
+ */
+export function subscribeToInspections({ onInsert, onUpdate, onDelete } = {}) {
+  const channel = supabase
+    .channel('unit_inspections_changes')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'unit_inspections' },
+      (payload) => onInsert && onInsert(payload.new)
+    )
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'unit_inspections' },
+      (payload) => onUpdate && onUpdate(payload.new)
+    )
+    .on(
+      'postgres_changes',
+      { event: 'DELETE', schema: 'public', table: 'unit_inspections' },
+      (payload) => onDelete && onDelete(payload.old)
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
 }
