@@ -149,9 +149,8 @@ export async function uploadAllImages(form, signatureDataUrl) {
 export async function submitInspection(payload) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/unit_inspections`, {
     method: 'POST',
-    headers: restHeaders,
+    headers: { ...restHeaders, Prefer: 'return=representation' },
     body: JSON.stringify(payload),
-    Prefer: 'return=representation',
   })
 
   const text = await res.text()
@@ -180,7 +179,18 @@ export async function submitInspection(payload) {
  * Convenience helper: upload images + insert row in one call.
  */
 export async function submitUnitInspection(form, signatureDataUrl, pdfUrl = null) {
-  const { photoUrls, signatureUrl } = await uploadAllImages(form, signatureDataUrl)
+  if (!pdfUrl) throw new Error('PDF upload did not return a URL; inspection was not submitted.')
+  // Upload photos + signature to storage. Upload failures must not block
+  // saving the inspection to the database.
+  let photoUrls = {}
+  let signatureUrl = null
+  try {
+    const uploaded = await uploadAllImages(form, signatureDataUrl)
+    photoUrls = uploaded.photoUrls
+    signatureUrl = uploaded.signatureUrl
+  } catch (e) {
+    console.error('Submit image upload failed:', e)
+  }
 
   // Create a sanitized form for storage: replace photo arrays with public URLs
   const sanitizedForm = { ...form }
@@ -196,21 +206,21 @@ export async function submitUnitInspection(form, signatureDataUrl, pdfUrl = null
   }
 
    const payload = {
-    inspection_date: form.inspectionDate || null,
-    building: form.building || null,
-    suite_number: form.suiteNumber || null,
-    inspector_name: form.inspectorName || null,
-    inspector_date: form.inspectorDate || null,
-    signature_url: signatureUrl,
-    pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
-    status: 'completed',
-    data: {
-      ...sanitizedForm,
-    pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
-      submittedAt: new Date().toISOString(),
-    },
-    submitted_at: new Date().toISOString(),
-  }
+     inspection_date: form.inspectionDate || null,
+     building: form.building || null,
+     suite_number: form.suiteNumber || null,
+     inspector_name: form.inspectorName || null,
+     inspector_date: form.inspectorDate || null,
+     signature_url: signatureUrl,
+     pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
+     status: 'completed',
+     data: {
+       ...sanitizedForm,
+     pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
+       submittedAt: new Date().toISOString(),
+     },
+     submitted_at: new Date().toISOString(),
+   }
 
   const rows = await submitInspection(payload)
   return { rows, photoUrls, signatureUrl }
@@ -282,7 +292,10 @@ async function rest(path, { method = 'GET', body, query = '' } = {}) {
   const url = `${SUPABASE_URL}/rest/v1/${path}${query ? '?' + query : ''}`
   const res = await fetch(url, {
     method,
-    headers: { ...restHeaders, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    headers: {
+      ...restHeaders,
+      ...(body ? { 'Content-Type': 'application/json', Prefer: 'return=representation' } : {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
     Prefer: 'return=representation',
   })
@@ -298,31 +311,42 @@ export async function saveDraft(draftId, form, signatureDataUrl, pdfUrl = null, 
   // If no draftId is tracked (e.g. after a page refresh), look for an existing
   // draft for the same building + suite so we update it instead of creating a duplicate row.
   if (!draftId && form.building && form.suiteNumber) {
-    const existing = await findExistingInspection(form.building, form.suiteNumber)
-    if (existing && existing.status === 'draft') {
-      draftId = existing.id
+    try {
+      const existing = await findExistingInspection(form.building, form.suiteNumber)
+      if (existing && existing.status === 'draft') {
+        draftId = existing.id
+      }
+    } catch {
+      // Ignore lookup failures and proceed to insert a new draft row.
     }
   }
 
   // Generate and upload a PDF for drafts too, so the stored pdf_url is a
   // complete public URL that opens the report when copied.
+  // PDF failures must not block saving the draft itself.
   if (!pdfUrl) {
-    try {
-      const blob = await generateInspectionPdf({
-        ...form,
-        signatureData: signatureDataUrl,
-        submittedAt: new Date().toISOString(),
-      })
-      const fileName = `draft-${Date.now()}.pdf`
-      pdfUrl = await uploadPdf(blob, fileName)
-    } catch (e) {
-      console.error('Draft PDF generation/upload failed:', e)
-    }
+    const blob = await generateInspectionPdf({
+      ...form,
+      signatureData: signatureDataUrl,
+      submittedAt: new Date().toISOString(),
+    })
+    const fileName = `draft-${Date.now()}.pdf`
+    pdfUrl = await uploadPdf(blob, fileName)
   }
+  if (!pdfUrl) throw new Error('PDF upload did not return a URL; draft was not saved.')
 
   // Upload photos + signature to storage so the database stores short public URLs
   // instead of giant base64 data URLs (same as submit).
-  const { photoUrls, signatureUrl } = await uploadAllImages(form, signatureDataUrl)
+  // Upload failures must not block saving the draft itself.
+  let photoUrls = {}
+  let signatureUrl = null
+  try {
+    const uploaded = await uploadAllImages(form, signatureDataUrl)
+    photoUrls = uploaded.photoUrls
+    signatureUrl = uploaded.signatureUrl
+  } catch (e) {
+    console.error('Draft image upload failed:', e)
+  }
 
   // Merge uploaded photo URLs into the form data (replacing base64 data URLs)
   const sanitizedForm = { ...form }
@@ -338,10 +362,11 @@ export async function saveDraft(draftId, form, signatureDataUrl, pdfUrl = null, 
 
    const payload = buildDraftPayload(sanitizedForm, signatureUrl, pdfUrl, status)
    if (draftId) {
-      return await rest(`unit_inspections?id=eq.${encodeURIComponent(draftId)}`, {
+      const updated = await rest(`unit_inspections?id=eq.${encodeURIComponent(draftId)}`, {
         method: 'PATCH',
         body: payload,
       })
+      if (Array.isArray(updated) && updated.length > 0) return updated
    }
    return await rest('unit_inspections', { method: 'POST', body: payload })
  }
@@ -391,6 +416,7 @@ export async function findExistingInspection(building, suiteNumber) {
  * Appends an update-history entry preserving the previous data.
  */
 export async function updateCompletedInspection(id, form, signatureDataUrl, pdfUrl, reason) {
+  if (!pdfUrl) throw new Error('PDF upload did not return a URL; inspection was not completed.')
   const rows = await rest(`unit_inspections?id=eq.${encodeURIComponent(id)}`)
   const row = Array.isArray(rows) && rows.length ? rows[0] : null
   const history = Array.isArray(row?.update_history) ? [...row.update_history] : []
@@ -406,7 +432,12 @@ export async function updateCompletedInspection(id, form, signatureDataUrl, pdfU
   // instead of a giant base64 data URL.
   let sigPath = null
   if (signatureDataUrl && signatureDataUrl.startsWith('data:')) {
-    sigPath = await uploadImage(signatureDataUrl, 'signatures')
+    try {
+      sigPath = await uploadImage(signatureDataUrl, 'signatures')
+    } catch (err) {
+      console.error('Signature upload failed; continuing with database update:', err)
+      sigPath = row?.signature_url || null
+    }
   } else {
     sigPath = signatureDataUrl || row?.signature_url || null
   }
@@ -424,7 +455,7 @@ export async function updateCompletedInspection(id, form, signatureDataUrl, pdfU
     data: {
       ...form,
       signatureData: sigPath || null,
-      pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
+      pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : row?.pdf_url || null,
       submittedAt: new Date().toISOString(),
     },
   }

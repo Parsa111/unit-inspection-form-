@@ -66,13 +66,18 @@ export async function generateInspectionPdf(data) {
         img.onerror = reject
         img.src = src
       })
+      const imageWidth = img.naturalWidth || img.width || 100
+      const imageHeight = img.naturalHeight || img.height || 100
+      const scale = Math.min(1, 1200 / Math.max(imageWidth, imageHeight))
       const canvas = document.createElement('canvas')
-      canvas.width = img.naturalWidth || img.width || 100
-      canvas.height = img.naturalHeight || img.height || 100
+      canvas.width = Math.max(1, Math.round(imageWidth * scale))
+      canvas.height = Math.max(1, Math.round(imageHeight * scale))
       const ctx = canvas.getContext('2d')
-      ctx.drawImage(img, 0, 0)
-      const dataUrl = canvas.toDataURL('image/png')
-      doc.addImage(dataUrl, 'PNG', x, startY, 120, 90)
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.72)
+      doc.addImage(dataUrl, 'JPEG', x, startY, 120, 90)
       return startY + 95
     } catch (e) {
       console.error('Image failed', e?.message)
@@ -151,8 +156,11 @@ export async function uploadPdf(blob, fileName) {
     },
     body: blob,
   })
-  if (!res.ok) throw new Error(`PDF upload failed (${res.status})`)
-  return `reports/${fileName}`
+  if (!res.ok) {
+    const details = await res.text()
+    throw new Error(`PDF upload failed (${res.status}): ${details || res.statusText}`)
+  }
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/reports/${encodeURIComponent(fileName)}`
 }
 
 export async function updatePdfUrl(rowId, pdfUrl) {

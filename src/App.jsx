@@ -179,7 +179,12 @@ export default function App() {
       return
     }
 
-    const existing = await findExistingInspection(form.building, form.suiteNumber)
+    let existing = null
+    try {
+      existing = await findExistingInspection(form.building, form.suiteNumber)
+    } catch (err) {
+      console.error('Existing inspection lookup failed; continuing with submission:', err)
+    }
     if (existing && existing.id !== draftId) {
       if (existing.status !== 'completed') {
         const cont = window.confirm('A draft/in-progress inspection exists for this unit. Continue it instead of creating a new one?')
@@ -206,7 +211,13 @@ export default function App() {
         setSubmitting(true)
         try {
           const sigData = signatureRef.current?.getDataUrl()
-          const pdfUrl = null
+          // Generate and upload a PDF so the completed pdf_url is stored in the database.
+          const blob = await generateInspectionPdf({
+            ...form,
+            signatureData: sigData,
+            submittedAt: new Date().toISOString(),
+          })
+          const pdfUrl = await uploadPdf(blob, `report-${Date.now()}.pdf`)
           await updateCompletedInspection(existing.id, form, sigData, pdfUrl, reason)
           setSubmitted(true)
         } catch (err) {
@@ -231,14 +242,8 @@ export default function App() {
           submittedAt: new Date().toISOString(),
         }
         // Generate PDF report and upload first, so pdf_url is stored with the row.
-        let pdfUrl = null
-        try {
-          const blob = await generateInspectionPdf(submission)
-          const fileName = `report-${Date.now()}.pdf`
-          pdfUrl = await uploadPdf(blob, fileName)
-        } catch (e) {
-          console.error('PDF generation/upload failed:', e)
-        }
+        const blob = await generateInspectionPdf(submission)
+        const pdfUrl = await uploadPdf(blob, `report-${Date.now()}.pdf`)
         const result = await updateCompletedInspection(draftId, form, sigData, pdfUrl, 'Completed from draft')
         const rows = Array.isArray(result) ? result : [result]
         setSubmittedData({ ...submission, supabase: { rows, pdfUrl } })
@@ -272,19 +277,14 @@ export default function App() {
 
     try {
       // Generate PDF report and upload first, so pdf_url is stored with the row.
-      let pdfUrl = null
-      try {
-        const blob = await generateInspectionPdf(submission)
-        const fileName = `report-${Date.now()}.pdf`
-        pdfUrl = await uploadPdf(blob, fileName)
-      } catch (e) {
-        console.error('PDF generation/upload failed:', e)
-      }
+      const blob = await generateInspectionPdf(submission)
+      const pdfUrl = await uploadPdf(blob, `report-${Date.now()}.pdf`)
 
       // Upload images to Supabase Storage (stores URLs, not blobs) and
       // insert the inspection row into the database.
       const result = await submitUnitInspection(form, sigData, pdfUrl)
       setSubmittedData({ ...submission, supabase: { ...result, pdfUrl } })
+      setSubmitted(true)
     } catch (err) {
       // Network/storage failure — keep the locally saved submission so the
       // data is not lost; surface the error to the inspector.
@@ -292,13 +292,9 @@ export default function App() {
       setSubmitError(
         err?.message || 'Could not save to the database. Your report was kept locally.'
       )
-      setSubmittedData({ ...submission, supabase: { pdfUrl } })
     } finally {
       setSubmitting(false)
     }
-
-    setSubmitted(true)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleReset = () => {
