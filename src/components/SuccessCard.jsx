@@ -1,6 +1,43 @@
+import { useState } from 'react'
 import { formatUnitCode } from '../lib/buildingUnits'
+import { getPublicUrl } from '../lib/supabase'
+import { generateInspectionPdf } from '../lib/pdfReport'
 
 export default function SuccessCard({ data, onNewInspection }) {
+  const [downloading, setDownloading] = useState(false)
+
+  const downloadBlob = (blob, fileName) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleDownloadPdf = async () => {
+    setDownloading(true)
+    try {
+      const pdfUrl = data.supabase?.pdfUrl
+      if (pdfUrl) {
+        const url = getPublicUrl(pdfUrl)
+        const res = await fetch(url)
+        if (!res.ok) throw new Error('PDF fetch failed (' + res.status + ')')
+        const blob = await res.blob()
+        downloadBlob(blob, `inspection-report-${data.suiteNumber || 'unit'}.pdf`)
+        return
+      }
+      const blob = await generateInspectionPdf(data)
+      downloadBlob(blob, `inspection-report-${data.suiteNumber || 'unit'}.pdf`)
+    } catch (err) {
+      console.error('PDF download failed:', err)
+      window.alert('Could not download the PDF report. ' + (err?.message || 'unknown error'))
+    } finally {
+      setDownloading(false)
+    }
+  }
   const row = (label, value) => (
     <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
       <span className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">{label}</span>
@@ -33,7 +70,7 @@ export default function SuccessCard({ data, onNewInspection }) {
 
   // Prefer the uploaded URL (stored in Supabase Storage, not the DB) when
   // available; fall back to the local data URL for offline-only submissions.
-  const signatureSrc = data.supabase?.signatureUrl || data.signatureUrl || data.signatureData
+  const signatureSrc = getPublicUrl(data.supabase?.signatureUrl || data.signatureUrl || data.signatureData)
   const savedToDb = Boolean(data.supabase?.rows?.length)
 
   return (
@@ -196,7 +233,7 @@ export default function SuccessCard({ data, onNewInspection }) {
             </span>
             <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <img
-                src={data.signatureData}
+                src={signatureSrc}
                 alt="Inspector Signature"
                 className="max-h-14 object-contain filter dark:invert"
               />
@@ -210,17 +247,15 @@ export default function SuccessCard({ data, onNewInspection }) {
 
         {/* Start New Inspection */}
         <div className="flex flex-col gap-3">
-          {data.supabase?.pdfUrl && (
-            <a
-              href={data.supabase.pdfUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-base cursor-pointer"
-            >
-              <span>⬇</span>
-              <span>Download PDF Report</span>
-            </a>
-          )}
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            disabled={downloading}
+            className={`w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg active:scale-[0.98] transition-all duration-200 flex items-center justify-center gap-2 text-base cursor-pointer ${downloading ? 'opacity-75 cursor-not-allowed' : ''}`}
+          >
+            <span>{downloading ? '⟳' : '⬇'}</span>
+            <span>{downloading ? 'Preparing…' : 'Download PDF Report'}</span>
+          </button>
           <button
             type="button"
             onClick={onNewInspection}

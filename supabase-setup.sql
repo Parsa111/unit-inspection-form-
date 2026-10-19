@@ -71,8 +71,40 @@ CREATE POLICY "inspection_images_anon_update"
 -- 5.1) Add PDF URL column (idempotent)
 ALTER TABLE unit_inspections ADD COLUMN IF NOT EXISTS pdf_url text;
 
--- 6) Helpful indexes
+-- 5.2) Draft / update tracking columns (idempotent)
+ALTER TABLE unit_inspections ADD COLUMN IF NOT EXISTS status text DEFAULT 'draft' CHECK (status IN ('draft','in_progress','completed'));
+ALTER TABLE unit_inspections ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+ALTER TABLE unit_inspections ADD COLUMN IF NOT EXISTS updated_by text;
+ALTER TABLE unit_inspections ADD COLUMN IF NOT EXISTS update_reason text;
+ALTER TABLE unit_inspections ADD COLUMN IF NOT EXISTS update_history jsonb DEFAULT '[]'::jsonb;
+
+-- 4.1) RLS update policy for drafts / updates (anon)
+DROP POLICY IF EXISTS "unit_inspections_anon_update" ON unit_inspections;
+CREATE POLICY "unit_inspections_anon_update"
+   ON unit_inspections
+   FOR UPDATE
+   TO anon
+   USING (true)
+   WITH CHECK (true);
+
+-- Auto-update updated_at on row update
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_unit_inspections_updated_at ON unit_inspections;
+CREATE TRIGGER trg_unit_inspections_updated_at
+BEFORE UPDATE ON unit_inspections
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 CREATE INDEX IF NOT EXISTS idx_unit_inspections_submitted_at
    ON unit_inspections (submitted_at DESC);
 CREATE INDEX IF NOT EXISTS idx_unit_inspections_suite
    ON unit_inspections (suite_number);
+CREATE INDEX IF NOT EXISTS idx_unit_inspections_status
+   ON unit_inspections (status);
+CREATE INDEX IF NOT EXISTS idx_unit_inspections_building_suite
+   ON unit_inspections (building, suite_number);

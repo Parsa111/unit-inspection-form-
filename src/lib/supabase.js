@@ -20,6 +20,16 @@ export const SUPABASE_ANON_KEY =
 
 export const BUCKET = 'inspection-images'
 
+export function getPublicUrl(relativePath) {
+  if (!relativePath) return null
+  if (typeof relativePath === 'string' && (relativePath.startsWith('http') || relativePath.startsWith('data:'))) return relativePath
+  // Paths are generated internally (photos/<stamp>.jpg, reports/<stamp>.pdf,
+  // signatures/<stamp>.jpg) so they contain only URL-safe characters; do not
+  // percent-encode the whole path, or the '/' folder separators become %2F and
+  // the public URL 404s.
+  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${relativePath}`
+}
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 const restHeaders = {
@@ -82,7 +92,7 @@ export async function uploadImage(dataURL, folder = 'photos') {
     return dataURL
   }
 
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`
+  return getPublicUrl(path)
 }
 
 /**
@@ -184,7 +194,7 @@ export async function submitUnitInspection(form, signatureDataUrl, pdfUrl = null
     }
   }
 
-  const payload = {
+   const payload = {
     inspection_date: form.inspectionDate || null,
     building: form.building || null,
     suite_number: form.suiteNumber || null,
@@ -192,6 +202,7 @@ export async function submitUnitInspection(form, signatureDataUrl, pdfUrl = null
     inspector_date: form.inspectorDate || null,
     signature_url: signatureUrl,
     pdf_url: pdfUrl,
+    status: 'completed',
     data: {
       ...sanitizedForm,
       pdf_url: pdfUrl,
@@ -240,4 +251,159 @@ export function subscribeToInspections({ onInsert, onUpdate, onDelete } = {}) {
   return () => {
     supabase.removeChannel(channel)
   }
+}
+
+/**
+ * Build a draft-safe payload (photos/signature kept as data URLs so no
+ * Storage round-trip is needed on every auto-save).
+ */
+function buildDraftPayload(form, signatureDataUrl, pdfUrl, status = 'draft') {
+  return {
+    inspection_date: form.inspectionDate || null,
+    building: form.building || null,
+    suite_number: form.suiteNumber || null,
+    inspector_name: form.inspectorName || null,
+    inspector_date: form.inspectorDate || null,
+    signature_url: signatureDataUrl || null,
+    pdf_url: pdfUrl || null,
+    status,
+    updated_by: form.inspectorName || null,
+    data: {
+      ...form,
+      signatureData: signatureDataUrl || null,
+      pdf_url: pdfUrl || null,
+      savedAt: new Date().toISOString(),
+    },
+  }
+}
+
+async function rest(path, { method = 'GET', body, query = '' } = {}) {
+  const url = `${SUPABASE_URL}/rest/v1/${path}${query ? '?' + query : ''}`
+  const res = await fetch(url, {
+    method,
+    headers: { ...restHeaders, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+    Prefer: 'return=representation',
+  })
+  const text = await res.text()
+  if (!res.ok) throw new Error(`Supabase ${method} ${path} failed (${res.status}): ${text}`)
+  try { return JSON.parse(text) } catch { return { success: true, text } }
+}
+
+/**
+ * Save (insert or update) an inspection draft row. Returns the saved row(s).
+ */
+export async function saveDraft(draftId, form, signatureDataUrl, pdfUrl = null, status = 'draft') {
+  // Upload photos + signature to storage so the database stores short public URLs
+  // instead of giant base64 data URLs (same as submit).
+  const { photoUrls, signatureUrl } = await uploadAllImages(form, signatureDataUrl)
+
+  // Merge uploaded photo URLs into the form data (replacing base64 data URLs)
+  const sanitizedForm = { ...form }
+  for (const key in sanitizedForm) {
+    if (
+      sanitizedForm[key] &&
+      typeof sanitizedForm[key] === 'object' &&
+      Array.isArray(sanitizedForm[key].photos)
+    ) {
+      sanitizedForm[key].photos = photoUrls[key] || []
+    }
+  }
+
+   const payload = buildDraftPayload(sanitizedForm, signatureUrl, pdfUrl, status)
+   if (draftId) {
+      return await rest(`unit_inspections?id=eq.${encodeURIComponent(draftId)}`, {
+        method: 'PATCH',
+        body: payload,
+      })
+   }
+   return await rest('unit_inspections', { method: 'POST', body: payload })
+ }
+
+/**
+ * List all inspections ordered by most recently updated (drafts first).
+ * Falls back to client-side sorting if the server cannot order by updated_at.
+ */
+export async function listInspections() {
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+
+  const rows = await rest('unit_inspections', {
+    query: `select=*&status=eq.draft&submitted_at=gte.${encodeURIComponent(startOfToday)}&submitted_at=lt.${encodeURIComponent(endOfToday)}&order=submitted_at.desc`,
+  });
+  const arr = Array.isArray(rows) ? rows : [];
+  arr.sort((a, b) => {
+    const aTime = a.updated_at || a.submitted_at || 0;
+    const bTime = b.updated_at || b.submitted_at || 0;
+    return new Date(bTime) - new Date(aTime);
+  });
+  return arr;
+}
+
+/**
+ * Find the most recent inspection/draft for a given building + suite number.
+ */
+export async function fetchInspection(id) {
+  const rows = await rest(`unit_inspections?id=eq.${encodeURIComponent(id)}`)
+  return Array.isArray(rows) && rows.length ? rows[0] : null
+}
+
+/**
+ * Find the most recent inspection/draft for a given building + suite number.
+ */
+export async function findExistingInspection(building, suiteNumber) {
+  if (!building || !suiteNumber) return null
+  const rows = await rest('unit_inspections', {
+    query: `select=*&building=eq.${encodeURIComponent(building)}&suite_number=eq.${encodeURIComponent(suiteNumber)}&order=submitted_at.desc&limit=1`,
+  })
+  return Array.isArray(rows) && rows.length ? rows[0] : null
+}
+
+/**
+ * Update an existing completed inspection (new submission for same unit).
+ * Appends an update-history entry preserving the previous data.
+ */
+export async function updateCompletedInspection(id, form, signatureDataUrl, pdfUrl, reason) {
+  const rows = await rest(`unit_inspections?id=eq.${encodeURIComponent(id)}`)
+  const row = Array.isArray(rows) && rows.length ? rows[0] : null
+  const history = Array.isArray(row?.update_history) ? [...row.update_history] : []
+  history.push({
+    updated_by: form.inspectorName || null,
+    updated_at: new Date().toISOString(),
+    update_reason: reason || null,
+    previous_data: row?.data || null,
+    previous_status: row?.status || null,
+  })
+
+  // Upload signature to storage so the database stores a short relative path
+  // instead of a giant base64 data URL.
+  let sigPath = null
+  if (signatureDataUrl && signatureDataUrl.startsWith('data:')) {
+    sigPath = await uploadImage(signatureDataUrl, 'signatures')
+  } else {
+    sigPath = signatureDataUrl || row?.signature_url || null
+  }
+
+  const payload = {
+    inspector_name: form.inspectorName || null,
+    inspector_date: form.inspectorDate || null,
+    signature_url: sigPath,
+    pdf_url: pdfUrl || row?.pdf_url || null,
+    status: 'completed',
+    updated_by: form.inspectorName || null,
+    update_reason: reason || null,
+    updated_at: new Date().toISOString(),
+    update_history: history,
+    data: {
+      ...form,
+      signatureData: sigPath || null,
+      pdf_url: pdfUrl || null,
+      submittedAt: new Date().toISOString(),
+    },
+  }
+  return await rest(`unit_inspections?id=eq.${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: payload,
+  })
 }

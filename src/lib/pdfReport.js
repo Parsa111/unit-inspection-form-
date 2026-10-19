@@ -152,7 +152,7 @@ export async function uploadPdf(blob, fileName) {
     body: blob,
   })
   if (!res.ok) throw new Error(`PDF upload failed (${res.status})`)
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/reports/${fileName}`
+  return `reports/${fileName}`
 }
 
 export async function updatePdfUrl(rowId, pdfUrl) {

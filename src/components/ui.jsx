@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react'
+import { getPublicUrl } from '../lib/supabase'
 
 // Segmented radio toggle with modern tactile feel
 export function SegmentedControl({ name, options, value, onChange }) {
@@ -347,7 +348,7 @@ export function PhotoUpload({ photos = [], onAdd, onRemove }) {
 
         <div className="grid grid-cols-3 gap-2">
           {photos.map((photo, idx) => {
-            const src = getPhotoSrc(photo)
+            const src = getPublicUrl(getPhotoSrc(photo))
             const timestamp = getPhotoTimestamp(photo)
             return (
               <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 cursor-zoom-in">

@@ -14,7 +14,7 @@ import Pets from './components/items/Pets'
 import EBikes from './components/items/EBikes'
 import SignatureSection from './components/SignatureSection'
 import SuccessCard from './components/SuccessCard'
-import { submitUnitInspection } from './lib/supabase'
+import { submitUnitInspection, saveDraft, fetchInspection, listInspections, findExistingInspection, updateCompletedInspection } from './lib/supabase'
 import { generateInspectionPdf, uploadPdf } from './lib/pdfReport'
 
 const STORAGE_KEY = 'ycc76_inspection_draft'
@@ -55,9 +55,30 @@ export default function App() {
   const [submittedData, setSubmittedData] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [draftId, setDraftId] = useState(null)
+  const [draftMessage, setDraftMessage] = useState('')
+  const [savingDraft, setSavingDraft] = useState(false)
+  const signatureRef = useRef(null)
+  const [drafts, setDrafts] = useState([])
+  useEffect(() => {
+    listInspections().then((rows) => {
+      if (Array.isArray(rows)) setDrafts(rows.filter((r) => r.status !== 'completed'))
+    }).catch(() => {})
+  }, [])
   const [errors, setErrors] = useState({})
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('ycc76_theme') === 'dark')
-  const signatureRef = useRef(null)
+  // Restore draft from URL ?draft=<id>
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('draft')
+    if (!id) return
+    fetchInspection(id).then((row) => {
+      if (!row?.data) return
+      const data = row.data || {}
+      setForm((f) => ({ ...defaultForm, ...f, ...data }))
+      setDraftId(row.id)
+    }).catch(() => {})
+  }, [])
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -116,6 +137,35 @@ export default function App() {
     return Object.keys(e).length === 0
   }
 
+  const handleSaveDraft = async () => {
+    setSavingDraft(true)
+    setDraftMessage('')
+    // Show confirmation instantly without waiting for upload / DB insert
+    setDraftMessage('Draft saved successfully.')
+    const sigData = signatureRef.current?.getDataUrl?.() || null
+    try {
+      const rows = await saveDraft(draftId, form, sigData, null, 'draft')
+      const saved = Array.isArray(rows) && rows.length ? rows[0] : null
+      if (saved?.id) setDraftId(saved.id)
+      // Refresh drafts list so the saved draft appears without refreshing the page
+      try {
+        const all = await listInspections()
+        if (Array.isArray(all)) setDrafts(all.filter((r) => r.status !== 'completed'))
+      } catch {}
+    } catch (err) {
+      setDraftMessage('Saved locally; upload failed: ' + (err?.message || 'unknown error'))
+    } finally {
+      setSavingDraft(false)
+    }
+  }
+
+  const handleContinueDraft = (row) => {
+    const data = row?.data || {}
+    setForm((f) => ({ ...defaultForm, ...f, ...data }))
+    setDraftId(row.id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validate()) {
@@ -129,7 +179,80 @@ export default function App() {
       return
     }
 
-    const sigData = signatureRef.current?.getDataUrl()
+    const existing = await findExistingInspection(form.building, form.suiteNumber)
+    if (existing && existing.id !== draftId) {
+      if (existing.status !== 'completed') {
+        const cont = window.confirm('A draft/in-progress inspection exists for this unit. Continue it instead of creating a new one?')
+        if (cont) {
+          handleContinueDraft(existing)
+          return
+        } else {
+          return
+        }
+      } else {
+        const upd = window.confirm('An inspection already exists for this unit. Update existing inspection?')
+        if (!upd) return
+        const reasonChoice = window.prompt('Select update reason: 1) Follow-up visit 2) Incomplete inspection 3) Second visit 4) Other')
+        const reasons = { '1': 'Follow-up visit', '2': 'Incomplete inspection', '3': 'Second visit' }
+        let reason = reasons[reasonChoice]
+        if (reasonChoice === '4') {
+          reason = window.prompt('Please provide explanation:')
+        }
+        if (!reason || !reason.trim()) {
+          window.alert('Update reason is required.')
+          return
+        }
+        // update path
+        setSubmitting(true)
+        try {
+          const sigData = signatureRef.current?.getDataUrl()
+          const pdfUrl = null
+          await updateCompletedInspection(existing.id, form, sigData, pdfUrl, reason)
+          setSubmitted(true)
+        } catch (err) {
+          setSubmitError(err?.message || 'Update failed')
+        } finally {
+          setSubmitting(false)
+        }
+        return
+      }
+    }
+
+    const sigData = signatureRef.current?.getDataUrl?.() || null
+
+    // If continuing an existing draft, update that same row instead of creating a new one.
+    if (draftId) {
+      setSubmitting(true)
+      setSubmitError('')
+      try {
+        const submission = {
+          ...form,
+          signatureData: sigData,
+          submittedAt: new Date().toISOString(),
+        }
+        // Generate PDF report and upload first, so pdf_url is stored with the row.
+        let pdfUrl = null
+        try {
+          const blob = await generateInspectionPdf(submission)
+          const fileName = `report-${Date.now()}.pdf`
+          pdfUrl = await uploadPdf(blob, fileName)
+        } catch (e) {
+          console.error('PDF generation/upload failed:', e)
+        }
+        const result = await updateCompletedInspection(draftId, form, sigData, pdfUrl, 'Completed from draft')
+        const rows = Array.isArray(result) ? result : [result]
+        setSubmittedData({ ...submission, supabase: { rows, pdfUrl } })
+        setSubmitted(true)
+        localStorage.removeItem(STORAGE_KEY)
+      } catch (err) {
+        setSubmitError(err?.message || 'Update failed')
+      } finally {
+        setSubmitting(false)
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     const submission = {
       ...form,
       signatureData: sigData,
@@ -169,7 +292,7 @@ export default function App() {
       setSubmitError(
         err?.message || 'Could not save to the database. Your report was kept locally.'
       )
-      setSubmittedData(submission)
+      setSubmittedData({ ...submission, supabase: { pdfUrl } })
     } finally {
       setSubmitting(false)
     }
@@ -229,6 +352,20 @@ export default function App() {
       />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-28">
+        {drafts.length > 0 && (
+          <div className="mb-6 space-y-2">
+            <h3 className="text-sm font-bold">Saved Drafts</h3>
+            {drafts.map((d) => (
+              <div key={d.id} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900 border">
+                <div>
+                  <div className="text-sm font-medium">{d.building} - {d.suite_number || 'No suite'}</div>
+                  <div className="text-xs text-slate-500">{d.status} · {new Date(d.updated_at || d.submitted_at).toLocaleString()}</div>
+                </div>
+                <button type="button" onClick={() => handleContinueDraft(d)} className="px-3 py-1 text-xs font-bold bg-blue-600 text-white rounded-lg">Continue Inspection</button>
+              </div>
+            ))}
+          </div>
+        )}
         <form onSubmit={handleSubmit} noValidate className="space-y-6">
           
           {/* Corp Header & Meta Information */}
@@ -331,8 +468,19 @@ export default function App() {
             errors={errors}
           />
 
-          {/* Submit Action Bar */}
-          <div className="pt-4">
+          {/* Save Draft + Submit Action Bar */}
+          <div className="pt-4 space-y-3">
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={savingDraft}
+              className={`w-full py-3 px-6 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-base font-bold rounded-2xl transition-all ${savingDraft ? 'opacity-75 cursor-not-allowed' : ''}`}
+            >
+              {savingDraft ? 'Saving Draft…' : 'Save Draft'}
+            </button>
+            {draftMessage && (
+              <p className="text-center text-xs font-bold text-emerald-600 dark:text-emerald-400">{draftMessage}</p>
+            )}
             <button
               type="submit"
               disabled={submitting}
