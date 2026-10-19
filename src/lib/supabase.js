@@ -10,6 +10,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
+import { generateInspectionPdf, uploadPdf } from './pdfReport'
 
 export const SUPABASE_URL =
   import.meta.env.VITE_SUPABASE_URL || 'https://oeretbscjmphptlytbhw.supabase.co'
@@ -201,11 +202,11 @@ export async function submitUnitInspection(form, signatureDataUrl, pdfUrl = null
     inspector_name: form.inspectorName || null,
     inspector_date: form.inspectorDate || null,
     signature_url: signatureUrl,
-    pdf_url: pdfUrl,
+    pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
     status: 'completed',
     data: {
       ...sanitizedForm,
-      pdf_url: pdfUrl,
+    pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
       submittedAt: new Date().toISOString(),
     },
     submitted_at: new Date().toISOString(),
@@ -265,13 +266,13 @@ function buildDraftPayload(form, signatureDataUrl, pdfUrl, status = 'draft') {
     inspector_name: form.inspectorName || null,
     inspector_date: form.inspectorDate || null,
     signature_url: signatureDataUrl || null,
-    pdf_url: pdfUrl || null,
+    pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
     status,
     updated_by: form.inspectorName || null,
     data: {
       ...form,
       signatureData: signatureDataUrl || null,
-      pdf_url: pdfUrl || null,
+      pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
       savedAt: new Date().toISOString(),
     },
   }
@@ -294,6 +295,31 @@ async function rest(path, { method = 'GET', body, query = '' } = {}) {
  * Save (insert or update) an inspection draft row. Returns the saved row(s).
  */
 export async function saveDraft(draftId, form, signatureDataUrl, pdfUrl = null, status = 'draft') {
+  // If no draftId is tracked (e.g. after a page refresh), look for an existing
+  // draft for the same building + suite so we update it instead of creating a duplicate row.
+  if (!draftId && form.building && form.suiteNumber) {
+    const existing = await findExistingInspection(form.building, form.suiteNumber)
+    if (existing && existing.status === 'draft') {
+      draftId = existing.id
+    }
+  }
+
+  // Generate and upload a PDF for drafts too, so the stored pdf_url is a
+  // complete public URL that opens the report when copied.
+  if (!pdfUrl) {
+    try {
+      const blob = await generateInspectionPdf({
+        ...form,
+        signatureData: signatureDataUrl,
+        submittedAt: new Date().toISOString(),
+      })
+      const fileName = `draft-${Date.now()}.pdf`
+      pdfUrl = await uploadPdf(blob, fileName)
+    } catch (e) {
+      console.error('Draft PDF generation/upload failed:', e)
+    }
+  }
+
   // Upload photos + signature to storage so the database stores short public URLs
   // instead of giant base64 data URLs (same as submit).
   const { photoUrls, signatureUrl } = await uploadAllImages(form, signatureDataUrl)
@@ -389,7 +415,7 @@ export async function updateCompletedInspection(id, form, signatureDataUrl, pdfU
     inspector_name: form.inspectorName || null,
     inspector_date: form.inspectorDate || null,
     signature_url: sigPath,
-    pdf_url: pdfUrl || row?.pdf_url || null,
+    pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : row?.pdf_url || null,
     status: 'completed',
     updated_by: form.inspectorName || null,
     update_reason: reason || null,
@@ -398,7 +424,7 @@ export async function updateCompletedInspection(id, form, signatureDataUrl, pdfU
     data: {
       ...form,
       signatureData: sigPath || null,
-      pdf_url: pdfUrl || null,
+      pdf_url: pdfUrl ? getPublicUrl(pdfUrl) : null,
       submittedAt: new Date().toISOString(),
     },
   }
