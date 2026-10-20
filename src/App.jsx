@@ -185,54 +185,58 @@ export default function App() {
     } catch (err) {
       console.error('Existing inspection lookup failed; continuing with submission:', err)
     }
+    let skipDraftUpdate = false
     if (existing && existing.id !== draftId) {
       if (existing.status !== 'completed') {
         const cont = window.confirm('A draft/in-progress inspection exists for this unit. Continue it instead of creating a new one?')
         if (cont) {
           handleContinueDraft(existing)
           return
-        } else {
-          return
         }
+        // User declined — create a new row instead of updating the draft
+        skipDraftUpdate = true
       } else {
         const upd = window.confirm('An inspection already exists for this unit. Update existing inspection?')
-        if (!upd) return
-        const reasonChoice = window.prompt('Select update reason: 1) Follow-up visit 2) Incomplete inspection 3) Second visit 4) Other')
-        const reasons = { '1': 'Follow-up visit', '2': 'Incomplete inspection', '3': 'Second visit' }
-        let reason = reasons[reasonChoice]
-        if (reasonChoice === '4') {
-          reason = window.prompt('Please provide explanation:')
-        }
-        if (!reason || !reason.trim()) {
-          window.alert('Update reason is required.')
+        if (!upd) {
+          // User declined — create a new row instead of returning
+          skipDraftUpdate = true
+        } else {
+          const reasonChoice = window.prompt('Select update reason: 1) Follow-up visit 2) Incomplete inspection 3) Second visit 4) Other')
+          const reasons = { '1': 'Follow-up visit', '2': 'Incomplete inspection', '3': 'Second visit' }
+          let reason = reasons[reasonChoice]
+          if (reasonChoice === '4') {
+            reason = window.prompt('Please provide explanation:')
+          }
+          if (!reason || !reason.trim()) {
+            window.alert('Update reason is required.')
+            return
+          }
+          // update path
+          setSubmitting(true)
+          try {
+            const sigData = signatureRef.current?.getDataUrl()
+            const blob = await generateInspectionPdf({
+              ...form,
+              signatureData: sigData,
+              submittedAt: new Date().toISOString(),
+            })
+            const pdfUrl = await uploadPdf(blob, `report-${Date.now()}.pdf`)
+            await updateCompletedInspection(existing.id, form, sigData, pdfUrl, reason)
+            setSubmitted(true)
+          } catch (err) {
+            setSubmitError(err?.message || 'Update failed')
+          } finally {
+            setSubmitting(false)
+          }
           return
         }
-        // update path
-        setSubmitting(true)
-        try {
-          const sigData = signatureRef.current?.getDataUrl()
-          // Generate and upload a PDF so the completed pdf_url is stored in the database.
-          const blob = await generateInspectionPdf({
-            ...form,
-            signatureData: sigData,
-            submittedAt: new Date().toISOString(),
-          })
-          const pdfUrl = await uploadPdf(blob, `report-${Date.now()}.pdf`)
-          await updateCompletedInspection(existing.id, form, sigData, pdfUrl, reason)
-          setSubmitted(true)
-        } catch (err) {
-          setSubmitError(err?.message || 'Update failed')
-        } finally {
-          setSubmitting(false)
-        }
-        return
       }
     }
 
     const sigData = signatureRef.current?.getDataUrl?.() || null
 
     // If continuing an existing draft, update that same row instead of creating a new one.
-    if (draftId) {
+    if (draftId && !skipDraftUpdate) {
       setSubmitting(true)
       setSubmitError('')
       try {
