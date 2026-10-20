@@ -154,14 +154,14 @@ const SignatureSection = forwardRef(function SignatureSection(
               }`}
             >
               <option value="">Select inspector</option>
-              <option value="ANATOLIY DOVGAN">ANATOLIY DOVGAN</option>
-              <option value="BOJAN STOJANOVSKI">BOJAN STOJANOVSKI</option>
-              <option value="DEJAN DRAPIK">DEJAN DRAPIK</option>
-              <option value="HARI SPIRKOSKI">HARI SPIRKOSKI</option>
-              <option value="NIKOLA TRAJKOV">NIKOLA TRAJKOV</option>
-              <option value="OLEKSI KOVALOV">OLEKSI KOVALOV</option>
-              <option value="REG PERSAUD">REG PERSAUD</option>
-              <option value="VOLODYMYR PRISHLIAK">VOLODYMYR PRISHLIAK</option>
+              <option value="Anatoliy Dovgan">Anatoliy Dovgan</option>
+              <option value="Bojan Stojanovski">Bojan Stojanovski</option>
+              <option value="Dejan Drapik">Dejan Drapik</option>
+              <option value="Hari Spirkoski">Hari Spirkoski</option>
+              <option value="Nikola Trajkov">Nikola Trajkov</option>
+              <option value="Oleksi Kovalov">Oleksi Kovalov</option>
+              <option value="Reg Persaud">Reg Persaud</option>
+              <option value="Volodymyr Prishliak">Volodymyr Prishliak</option>
             </select>
           </div>
 
