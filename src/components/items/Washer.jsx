@@ -60,16 +60,18 @@ export default function Washer({ data, onChange }) {
             </div>
           </div>
 
-          <div className="sm:col-span-2">
-            <FieldLabel>Safety Inspection</FieldLabel>
-            <div className="flex flex-wrap gap-2.5">
-              <CheckPill
-                label="Check valves"
-                checked={data.checkValves}
-                onChange={(v) => onChange('checkValves', v)}
-              />
+          {data.portable && (
+            <div className="sm:col-span-2">
+              <FieldLabel>Safety Inspection</FieldLabel>
+              <div className="flex flex-wrap gap-2.5">
+                <CheckPill
+                  label="Check valves"
+                  checked={data.checkValves}
+                  onChange={(v) => onChange('checkValves', v)}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <FullWidth>
             <TextInput
