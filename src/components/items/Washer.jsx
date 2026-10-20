@@ -38,12 +38,12 @@ export default function Washer({ data, onChange }) {
             <FieldLabel>Connection Type</FieldLabel>
             <div className="flex flex-wrap gap-2.5">
               <CheckPill
-                label="Portable (circled)"
+                label="Portable"
                 checked={data.portable}
                 onChange={(v) => onChange('portable', v)}
               />
               <CheckPill
-                label="Direct (circled)"
+                label="Direct"
                 checked={data.direct}
                 onChange={(v) => onChange('direct', v)}
               />
@@ -51,6 +51,11 @@ export default function Washer({ data, onChange }) {
                 label="Kitchen"
                 checked={data.kitchen}
                 onChange={(v) => onChange('kitchen', v)}
+              />
+              <CheckPill
+                label="Washroom"
+                checked={data.washroom}
+                onChange={(v) => onChange('washroom', v)}
               />
             </div>
           </div>

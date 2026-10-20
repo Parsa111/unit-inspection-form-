@@ -143,6 +143,26 @@ const SignatureSection = forwardRef(function SignatureSection(
                 </span>
               )}
             </div>
+            <select
+              id="inspectorName"
+              value={inspectorName}
+              onChange={(e) => onNameChange(e.target.value)}
+              className={`min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 transition-all ${
+                errors.inspectorName
+                  ? 'border-red-500 focus:ring-red-400/30'
+                  : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500/30 focus:border-blue-500'
+              }`}
+            >
+              <option value="">Select inspector</option>
+              <option value="ANATOLIY DOVGAN">ANATOLIY DOVGAN</option>
+              <option value="BOJAN STOJANOVSKI">BOJAN STOJANOVSKI</option>
+              <option value="DEJAN DRAPIK">DEJAN DRAPIK</option>
+              <option value="HARI SPIRKOSKI">HARI SPIRKOSKI</option>
+              <option value="NIKOLA TRAJKOV">NIKOLA TRAJKOV</option>
+              <option value="OLEKSI KOVALOV">OLEKSI KOVALOV</option>
+              <option value="REG PERSAUD">REG PERSAUD</option>
+              <option value="VOLODYMYR PRISHLIAK">VOLODYMYR PRISHLIAK</option>
+            </select>
             <input
               id="inspectorName"
               type="text"

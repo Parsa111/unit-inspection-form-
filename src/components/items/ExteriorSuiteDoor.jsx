@@ -75,18 +75,31 @@ export default function ExteriorSuiteDoor({ data, onChange }) {
             <FullWidth>
               <div className="space-y-4 pt-2 border-t border-slate-100 dark:border-slate-800/80">
                 {data.alterations?.locks && (
-                  <SelectInput
-                    id="esd_lock_type"
-                    label="Lock Type"
-                    value={data.lockType || ''}
-                    onChange={(v) => onChange('lockType', v)}
-                    options={[
-                      { value: 'leverSet', label: 'Lever Set' },
-                      { value: 'mainSuiteDoorLock', label: 'Main Suite Door Lock' },
-                      { value: 'doorCloser', label: 'Door Closer' },
-                    ]}
-                    placeholder="Select lock type"
-                  />
+                  <div className="space-y-4">
+                    <SelectInput
+                      id="esd_lock_type"
+                      label="Lock Type"
+                      value={data.lockType || ''}
+                      onChange={(v) => onChange('lockType', v)}
+                      options={[
+                        { value: 'doorCloser', label: 'Door Closer' },
+                        { value: 'mainSuiteDoorLock', label: 'Main Suite Door Lock' },
+                        { value: 'leverSet', label: 'Lever Set' },
+                      ]}
+                      placeholder="Select lock type"
+                    />
+                    <SelectInput
+                      id="esd_additional_lock"
+                      label="Additional Lock"
+                      value={data.additionalLock || ''}
+                      onChange={(v) => onChange('additionalLock', v)}
+                      options={[
+                        { value: 'Yes', label: 'Yes' },
+                        { value: 'No', label: 'No' },
+                      ]}
+                      placeholder="Select"
+                    />
+                  </div>
                 )}
               </div>
             </FullWidth>
