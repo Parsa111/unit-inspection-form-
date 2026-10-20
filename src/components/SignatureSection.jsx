@@ -163,18 +163,6 @@ const SignatureSection = forwardRef(function SignatureSection(
               <option value="REG PERSAUD">REG PERSAUD</option>
               <option value="VOLODYMYR PRISHLIAK">VOLODYMYR PRISHLIAK</option>
             </select>
-            <input
-              id="inspectorName"
-              type="text"
-              value={inspectorName}
-              onChange={(e) => onNameChange(e.target.value)}
-              placeholder="Inspector full name"
-              className={`min-h-[44px] px-3.5 py-2.5 text-sm rounded-xl border bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 transition-all ${
-                errors.inspectorName
-                  ? 'border-red-500 focus:ring-red-400/30'
-                  : 'border-slate-200 dark:border-slate-700 focus:ring-blue-500/30 focus:border-blue-500'
-              }`}
-            />
           </div>
 
           <div className="flex flex-col gap-1.5">
