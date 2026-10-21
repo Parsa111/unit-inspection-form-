@@ -308,19 +308,6 @@ async function rest(path, { method = 'GET', body, query = '' } = {}) {
  * Save (insert or update) an inspection draft row. Returns the saved row(s).
  */
 export async function saveDraft(draftId, form, signatureDataUrl, pdfUrl = null, status = 'draft') {
-  // If no draftId is tracked (e.g. after a page refresh), look for an existing
-  // draft for the same building + suite so we update it instead of creating a duplicate row.
-  if (!draftId && form.building && form.suiteNumber) {
-    try {
-      const existing = await findExistingInspection(form.building, form.suiteNumber)
-      if (existing && existing.status === 'draft') {
-        draftId = existing.id
-      }
-    } catch {
-      // Ignore lookup failures and proceed to insert a new draft row.
-    }
-  }
-
   // Generate and upload a PDF for drafts too, so the stored pdf_url is a
   // complete public URL that opens the report when copied.
   // PDF failures must not block saving the draft itself.
@@ -409,6 +396,27 @@ export async function findExistingInspection(building, suiteNumber) {
     query: `select=*&building=eq.${encodeURIComponent(building)}&suite_number=eq.${encodeURIComponent(suiteNumber)}&order=submitted_at.desc&limit=1`,
   })
   return Array.isArray(rows) && rows.length ? rows[0] : null
+}
+
+/**
+ * Delete all inspections and restart the identity sequence so new IDs start from 1.
+ */
+export async function resetInspections() {
+  // Delete every row
+  await rest('unit_inspections', { method: 'DELETE' });
+  // Restart the identity counter so the next insert gets id = 1
+  const { error } = await supabase.rpc('reset_inspection_identity');
+  if (error) throw error;
+}
+
+/**
+ * Delete a single inspection by id and restart the identity sequence so new
+ * IDs start from 1.
+ */
+export async function deleteInspection(id) {
+  await rest(`unit_inspections?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+  const { error } = await supabase.rpc('reset_inspection_identity');
+  if (error) throw error;
 }
 
 /**

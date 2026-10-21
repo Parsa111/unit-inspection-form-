@@ -56,6 +56,7 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [draftId, setDraftId] = useState(null)
+  const [continuingFromDraft, setContinuingFromDraft] = useState(false)
   const [draftMessage, setDraftMessage] = useState('')
   const [savingDraft, setSavingDraft] = useState(false)
   const signatureRef = useRef(null)
@@ -140,13 +141,22 @@ export default function App() {
   const handleSaveDraft = async () => {
     setSavingDraft(true)
     setDraftMessage('')
-    // Show confirmation instantly without waiting for upload / DB insert
     setDraftMessage('Draft saved successfully.')
     const sigData = signatureRef.current?.getDataUrl?.() || null
     try {
       const rows = await saveDraft(draftId, form, sigData, null, 'draft')
       const saved = Array.isArray(rows) && rows.length ? rows[0] : null
       if (saved?.id) setDraftId(saved.id)
+      // Reset form after saving draft so next fill-out creates a new row
+      localStorage.removeItem(STORAGE_KEY)
+      setForm({ ...defaultForm })
+      signatureRef.current?.clear()
+      setDraftId(null)
+      setErrors({})
+      const today = getLocalDateString()
+      setForm((f) => ({ ...f, inspectionDate: today, inspectorDate: today }))
+      // Auto-hide confirmation after 1 second
+      setTimeout(() => setDraftMessage(''), 1000)
       // Refresh drafts list so the saved draft appears without refreshing the page
       try {
         const all = await listInspections()
@@ -163,6 +173,7 @@ export default function App() {
     const data = row?.data || {}
     setForm((f) => ({ ...defaultForm, ...f, ...data }))
     setDraftId(row.id)
+    setContinuingFromDraft(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -186,7 +197,7 @@ export default function App() {
       console.error('Existing inspection lookup failed; continuing with submission:', err)
     }
     let skipDraftUpdate = false
-    if (existing && existing.id !== draftId) {
+    if (!continuingFromDraft && existing && existing.id !== draftId) {
       if (existing.status !== 'completed') {
         const cont = window.confirm('A draft/in-progress inspection exists for this unit. Continue it instead of creating a new one?')
         if (cont) {
@@ -232,6 +243,8 @@ export default function App() {
         }
       }
     }
+
+    setContinuingFromDraft(false)
 
     const sigData = signatureRef.current?.getDataUrl?.() || null
 
@@ -307,6 +320,8 @@ export default function App() {
       setForm({ ...defaultForm })
       signatureRef.current?.clear()
       setErrors({})
+      setDraftId(null)
+      setContinuingFromDraft(false)
       const today = getLocalDateString()
       setForm((f) => ({ ...f, inspectionDate: today, inspectorDate: today }))
     }
@@ -317,6 +332,8 @@ export default function App() {
     setForm({ ...defaultForm })
     signatureRef.current?.clear()
     setErrors({})
+    setDraftId(null)
+    setContinuingFromDraft(false)
     setSubmitted(false)
     setSubmittedData(null)
     const today = getLocalDateString()
@@ -470,6 +487,9 @@ export default function App() {
 
           {/* Save Draft + Submit Action Bar */}
           <div className="pt-4 space-y-3">
+            <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+              Creating a new form? You can save the draft once. To make further changes, continue from the Saved Drafts list below.
+            </p>
             <button
               type="button"
               onClick={handleSaveDraft}

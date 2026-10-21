@@ -87,6 +87,25 @@ CREATE POLICY "unit_inspections_anon_update"
    USING (true)
    WITH CHECK (true);
 
+-- Reset identity so new IDs start from 1 after deleting all data.
+-- Run after TRUNCATE or mass DELETE:
+--   ALTER TABLE unit_inspections ALTER COLUMN id RESTART WITH 1;
+-- Or delete everything and reset in one step:
+--   TRUNCATE unit_inspections RESTART IDENTITY;
+
+-- Callable via supabase.rpc('reset_inspection_identity') to restart the id
+-- sequence at 1 after all rows have been deleted. SECURITY DEFINER lets the
+-- anon role execute the ALTER TABLE with the function owner's permissions.
+CREATE OR REPLACE FUNCTION reset_inspection_identity()
+RETURNS void 
+LANGUAGE plpgsql 
+SECURITY DEFINER 
+AS $$
+BEGIN
+  ALTER TABLE unit_inspections ALTER COLUMN id RESTART WITH 1;
+END;
+$$;
+
 -- Auto-update updated_at on row update
 CREATE OR REPLACE FUNCTION set_updated_at()
 RETURNS TRIGGER AS $$

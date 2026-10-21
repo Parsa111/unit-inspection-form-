@@ -208,6 +208,10 @@ const SignatureSection = forwardRef(function SignatureSection(
             </button>
           </div>
 
+          <p className="text-[0.7rem] font-bold text-slate-400 dark:text-slate-500 mt-0.5">
+            Signature is not required when saving as a draft. It is required only before final submission.
+          </p>
+
           <div
             className={`relative rounded-xl border-2 border-dashed overflow-hidden bg-white shadow-inner transition-all ${
               errors.signature
