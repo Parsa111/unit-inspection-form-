@@ -24,7 +24,7 @@ export async function generateInspectionPdf(data) {
     ['Washroom', data.washroom?.toiletCondition, data.washroom?.tapsComment || data.washroom?.vanityComment],
     ['Balcony', data.balcony?.damage, data.balcony?.comment],
     ['Windows', data.windows?.damage, data.windows?.comments],
-    ['Pets', data.pets?.present, data.pets?.details],
+    ['Pets', data.pets?.present, data.pets?.petCount],
     ['E-Bikes', data.ebikes?.present, data.ebikes?.location],
   ]
 

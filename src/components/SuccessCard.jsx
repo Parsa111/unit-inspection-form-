@@ -214,7 +214,7 @@ export default function SuccessCard({ data, onNewInspection }) {
             <div className="flex justify-between items-center pt-2">
               <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">08. Pets</span>
               <div className="flex items-center gap-2">
-                {statusBadge(data.pets?.allowed || data.pets?.present)}
+                {statusBadge(data.pets?.petCount || data.pets?.present)}
                 {photoCount(data.pets?.photos) > 0 && (
                   <span className="text-[0.65rem] font-mono font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                     📷 {photoCount(data.pets?.photos)}

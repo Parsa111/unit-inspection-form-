@@ -125,9 +125,17 @@ export default function App() {
     Boolean(form.washroom.toiletCondition || form.washroom.tapsLeaking || form.washroom.vanityLeaking || form.washroom.fanPresent),
     Boolean(form.balcony.damage),
     Boolean(form.windows.damage),
-    Boolean(form.pets.present || form.pets.allowed),
+    Boolean(form.pets.present || form.pets.petCount),
     Boolean(form.ebikes.present),
   ].filter(Boolean).length
+
+  const validateDraft = () => {
+    const e = {}
+    if (!form.suiteNumber.trim()) e.suiteNumber = 'Suite # is required'
+    if (!form.inspectorName.trim()) e.inspectorName = 'Inspector name is required'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   const validate = () => {
     const e = {}
@@ -139,6 +147,15 @@ export default function App() {
   }
 
   const handleSaveDraft = async () => {
+    if (!validateDraft()) {
+      setTimeout(() => {
+        const firstErr = document.querySelector('[data-error="true"]')
+        if (firstErr) {
+          firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 50)
+      return
+    }
     setSavingDraft(true)
     setDraftMessage('')
     setDraftMessage('Draft saved successfully.')
