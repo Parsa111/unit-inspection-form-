@@ -19,13 +19,14 @@ export async function generateInspectionPdf(data) {
     ['Partition Walls', data.partitionWalls?.status, data.partitionWalls?.details],
     ['Washer', data.washer?.present, data.washer?.notes],
     ['Dryer', data.dryer?.present, data.dryer?.other],
-    ['AC(s)', data.ac?.present, data.ac?.safety],
+    ['AC(s)', data.ac?.present, `${data.ac?.fixed ? 'Fixed x' + data.ac?.fixedQty : ''} ${data.ac?.portable ? 'Portable x' + data.ac?.portableQty : ''} ${data.ac?.safety || ''}`.trim() || '—'],
     ['Kitchen Taps', data.kitchenTaps?.status, data.kitchenTaps?.pipesNote],
     ['Washroom', data.washroom?.toiletCondition, data.washroom?.tapsComment || data.washroom?.vanityComment],
     ['Balcony', data.balcony?.damage, data.balcony?.comment],
     ['Windows', data.windows?.damage, data.windows?.comments],
     ['Pets', data.pets?.present, data.pets?.petCount],
     ['E-Bikes', data.ebikes?.present, data.ebikes?.location],
+    ['Other Devices', data.otherDevices?.speaker || data.otherDevices?.smokeAlarm || data.otherDevices?.dts, data.otherDevices?.speakerNote || data.otherDevices?.smokeStatus || data.otherDevices?.dts],
   ]
 
   for (const [label, status, comment] of lines) {
@@ -109,6 +110,7 @@ export async function generateInspectionPdf(data) {
     ['Windows', data.windows?.photos],
     ['Pets', data.pets?.photos],
     ['E-Bikes', data.ebikes?.photos],
+    ['Other Devices', data.otherDevices?.photos],
   ]
 
   const hasPhotos = sectionsWithPhotos.some(([, arr]) => Array.isArray(arr) && arr.length > 0)

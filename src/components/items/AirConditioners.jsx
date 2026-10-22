@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, CheckPill, TextInput, PhotoUpload } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, CheckPill, NumberInput, TextInput, PhotoUpload } from '../ui'
 
 export default function AirConditioners({ data, onChange }) {
   const isCompleted = Boolean(data.present || data.safety)
@@ -50,34 +50,35 @@ export default function AirConditioners({ data, onChange }) {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label
-              htmlFor="ac_qty"
-              className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400"
-            >
-              Quantity (Units)
-            </label>
-            <input
-              id="ac_qty"
-              type="number"
-              min="0"
-              max="20"
-              value={data.qty}
-              onChange={(e) => {
-                const raw = e.target.value
-                if (raw === '') {
-                  onChange('qty', 1)
-                  return
-                }
-                const n = Number(raw)
-                if (Number.isFinite(n)) {
-                  onChange('qty', Math.max(0, Math.min(20, Math.round(n))))
-                }
-              }}
-              placeholder="e.g. 4"
-              className="min-h-[44px] px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all w-32"
-            />
-          </div>
+          {data.fixed && (
+            <div className="sm:col-span-2">
+              <NumberInput
+                id="ac_fixed_qty"
+                label="Fixed — Quantity (Units)"
+                value={data.fixedQty || ''}
+                min={0}
+                max={20}
+                step={1}
+                onChange={(v) => onChange('fixedQty', v)}
+                placeholder="0"
+              />
+            </div>
+          )}
+
+          {data.portable && (
+            <div className="sm:col-span-2">
+              <NumberInput
+                id="ac_portable_qty"
+                label="Portable — Quantity (Units)"
+                value={data.portableQty || ''}
+                min={0}
+                max={20}
+                step={1}
+                onChange={(v) => onChange('portableQty', v)}
+                placeholder="0"
+              />
+            </div>
+          )}
 
           <div className="sm:col-span-2">
             <FieldLabel>Safety & Installation Assessment</FieldLabel>

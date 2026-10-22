@@ -12,6 +12,7 @@ import Balcony from './components/items/Balcony'
 import Windows from './components/items/Windows'
 import Pets from './components/items/Pets'
 import EBikes from './components/items/EBikes'
+import OtherDevices from './components/items/OtherDevices'
 import SignatureSection from './components/SignatureSection'
 import SuccessCard from './components/SuccessCard'
 import { submitUnitInspection, saveDraft, fetchInspection, listInspections, findExistingInspection, updateCompletedInspection } from './lib/supabase'
@@ -35,13 +36,14 @@ const defaultForm = {
   partitionWalls: { status: '', details: '', other: '', photos: [] },
   washer: { present: '', portable: false, direct: false, kitchen: false, checkValves: false, notes: '', other: '', photos: [] },
   dryer: { present: '', kitchen: false, other: '', photos: [] },
-  ac: { present: '', fixed: false, portable: false, qty: 1, safety: '', other: '', photos: [] },
+  ac: { present: '', fixed: false, portable: false, fixedQty: '', portableQty: '', safety: '', other: '', photos: [] },
   kitchenTaps: { status: '', pipesNote: '', other: '', photos: [] },
   washroom: { toiletCondition: '', toiletComment: '', tapsLeaking: '', tapsComment: '', vanityLeaking: '', vanityComment: '', fanPresent: '', photos: [] },
   balcony: { damage: '', comment: '', photos: [] },
   windows: { damage: '', comments: '', photos: [] },
   pets: { present: '', allowed: '', details: '', other: '', photos: [] },
   ebikes: { present: '', count: '', location: '', photos: [] },
+  otherDevices: { speaker: '', speakerNote: '', smokeAlarm: '', smokeStatus: '', dts: '', photos: [] },
   inspectorName: '',
   inspectorDate: '',
 }
@@ -127,6 +129,7 @@ export default function App() {
     Boolean(form.windows.damage),
     Boolean(form.pets.present || form.pets.petCount),
     Boolean(form.ebikes.present),
+    Boolean(form.otherDevices.speaker || form.otherDevices.smokeAlarm || form.otherDevices.dts),
   ].filter(Boolean).length
 
   const validateDraft = () => {
@@ -484,10 +487,16 @@ export default function App() {
             onChange={(f, v) => update('ebikes', f, v)}
           />
 
+          {/* 11 — Other Devices */}
+          <OtherDevices
+            data={form.otherDevices}
+            onChange={(f, v) => update('otherDevices', f, v)}
+          />
+
           {/* Section Divider with label */}
           <div className="flex items-center gap-3 pt-2">
             <span className="text-[0.7rem] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 whitespace-nowrap">
-              Inspector Sign-Off (Item 10)
+              Inspector Sign-Off (Item 11)
             </span>
             <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           </div>
