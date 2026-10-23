@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, TextInput, PhotoUpload } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, CheckPill, NumberInput, TextInput, PhotoUpload, TextArea } from '../ui'
 
 export default function OtherDevices({ data, onChange }) {
   const isCompleted = Boolean(data.speaker || data.smokeAlarm || data.dts)
@@ -68,25 +68,90 @@ export default function OtherDevices({ data, onChange }) {
       {data.smokeAlarm === 'In unit' && (
         <>
           <div className="sm:col-span-2">
-            <FieldLabel>Smoke Alarm Status</FieldLabel>
-            <SegmentedControl
-              name="smoke_status"
-              value={data.smokeStatus}
-              onChange={(v) => onChange('smokeStatus', v)}
-              options={[
-                {
-                  value: 'Working',
-                  label: 'Working',
-                  activeClass: 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold',
-                },
-                {
-                  value: 'Activated (unclear)',
-                  label: 'Activated (unclear)',
-                  activeClass: 'bg-amber-600 text-white shadow-md shadow-amber-600/20 font-bold',
-                },
-              ]}
+            <FieldLabel>Smoke Alarm — Quantity</FieldLabel>
+            <NumberInput
+              id="smoke_alarm_qty"
+              label="Quantity"
+              value={data.smokeAlarmQty || 1}
+              min={1}
+              max={4}
+              step={1}
+              onChange={(v) => onChange('smokeAlarmQty', v)}
+              placeholder="1"
             />
           </div>
+
+          <div className="sm:col-span-2">
+            <FieldLabel>Smoke Alarm Status</FieldLabel>
+            <div className="flex flex-wrap gap-2.5">
+              {Array.from({ length: data.smokeAlarmQty || 1 }, (_, i) => (
+                <CheckPill
+                  key={i}
+                  label={`Alarm ${i + 1}`}
+                  checked={(data.smokeAlarmWorking || []).includes(i)}
+                  onChange={(checked) => {
+                    const next = checked
+                      ? [...(data.smokeAlarmWorking || []), i]
+                      : (data.smokeAlarmWorking || []).filter((n) => n !== i)
+                    onChange('smokeAlarmWorking', next)
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <FieldLabel>Working Status</FieldLabel>
+            <div className="flex flex-wrap gap-2.5">
+              {Array.from({ length: data.smokeAlarmQty || 1 }, (_, i) => {
+                const isWorking = (data.smokeAlarmWorking || []).includes(i)
+                return (
+                  <SegmentedControl
+                    key={i}
+                    name={`smoke_alarm_status_${i + 1}`}
+                    value={isWorking ? 'Working' : 'Not Working'}
+                    onChange={(v) => {
+                      const next = v === 'Working'
+                        ? [...(data.smokeAlarmWorking || []), i]
+                        : (data.smokeAlarmWorking || []).filter((n) => n !== i)
+                      onChange('smokeAlarmWorking', next)
+                    }}
+                    options={[
+                      {
+                        value: 'Working',
+                        label: 'Working',
+                        activeClass: 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold',
+                      },
+                      {
+                        value: 'Not Working',
+                        label: 'Not Working',
+                        activeClass: 'bg-rose-600 text-white shadow-md shadow-rose-600/20 font-bold',
+                      },
+                    ]}
+                  />
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="sm:col-span-2">
+            <TextArea
+              id="smoke_alarm_comments"
+              label="Comments"
+              value={data.smokeAlarmComments || ''}
+              onChange={(v) => onChange('smokeAlarmComments', v)}
+              placeholder="Notes about smoke alarm(s)..."
+              rows={3}
+            />
+          </div>
+
+          <FullWidth>
+            <PhotoUpload
+              photos={data.photos || []}
+              onAdd={(src) => onChange('photos', [...(data.photos || []), src])}
+              onRemove={(idx) => onChange('photos', (data.photos || []).filter((_, i) => i !== idx))}
+            />
+          </FullWidth>
         </>
       )}
 

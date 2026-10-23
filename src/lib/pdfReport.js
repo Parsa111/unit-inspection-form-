@@ -24,9 +24,9 @@ export async function generateInspectionPdf(data) {
     ['Washroom', data.washroom?.toiletCondition, data.washroom?.tapsComment || data.washroom?.vanityComment],
     ['Balcony', data.balcony?.damage, data.balcony?.comment],
     ['Windows', data.windows?.damage, data.windows?.comments],
-    ['Pets', data.pets?.present, data.pets?.petCount],
+    ['Pets', data.pets?.present, data.pets?.comments],
     ['E-Bikes', data.ebikes?.present, data.ebikes?.location],
-    ['Other Devices', data.otherDevices?.speaker || data.otherDevices?.smokeAlarm || data.otherDevices?.dts, data.otherDevices?.speakerNote || data.otherDevices?.smokeStatus || data.otherDevices?.dts],
+    ['Other Devices', data.otherDevices?.speaker || data.otherDevices?.smokeAlarm || data.otherDevices?.dts, data.otherDevices?.speakerNote || (data.otherDevices?.smokeAlarm === 'In unit' ? `Qty: ${data.otherDevices?.smokeAlarmQty || 1} · Working: ${(data.otherDevices?.smokeAlarmWorking || []).map((n) => n + 1).join(', ') || '—'} · Comments: ${data.otherDevices?.smokeAlarmComments || '—'}` : '') || data.otherDevices?.dts],
   ]
 
   for (const [label, status, comment] of lines) {

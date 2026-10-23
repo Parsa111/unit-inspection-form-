@@ -129,7 +129,7 @@ export default function Washroom({ data, onChange }) {
         </FullWidth>
       )}
 
-      {(data.toiletCondition === 'Bad' || data.tapsLeaking === 'Leaking' || data.vanityLeaking === 'Leaking') && (
+      {(data.toiletCondition === 'Bad' || data.tapsLeaking === 'Leaking' || data.vanityLeaking === 'Leaking' || data.fanPresent === 'Yes') && (
         <FullWidth>
           <PhotoUpload
             photos={data.photos || []}

@@ -1,4 +1,4 @@
-import { ItemCard, FullWidth, FieldLabel, SegmentedControl, NumberInput, PhotoUpload } from '../ui'
+import { ItemCard, FullWidth, FieldLabel, SegmentedControl, NumberInput, PhotoUpload, TextArea } from '../ui'
 
 export default function Pets({ data, onChange }) {
   const count = Number(data.petCount) || 0
@@ -36,6 +36,17 @@ export default function Pets({ data, onChange }) {
 
       {data.present === 'Yes' && (
         <>
+          <FullWidth>
+            <TextArea
+              id="pets_comments"
+              label="Comments"
+              value={data.comments || ''}
+              onChange={(v) => onChange('comments', v)}
+              placeholder="Notes about pets..."
+              rows={3}
+            />
+          </FullWidth>
+
           <div className="sm:col-span-2">
             <NumberInput
               id="pets_count"

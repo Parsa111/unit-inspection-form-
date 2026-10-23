@@ -41,9 +41,9 @@ const defaultForm = {
   washroom: { toiletCondition: '', toiletComment: '', tapsLeaking: '', tapsComment: '', vanityLeaking: '', vanityComment: '', fanPresent: '', photos: [] },
   balcony: { damage: '', comment: '', photos: [] },
   windows: { damage: '', comments: '', photos: [] },
-  pets: { present: '', allowed: '', details: '', other: '', photos: [] },
+  pets: { present: '', allowed: '', details: '', other: '', comments: '', photos: [] },
   ebikes: { present: '', count: '', location: '', photos: [] },
-  otherDevices: { speaker: '', speakerNote: '', smokeAlarm: '', smokeStatus: '', dts: '', photos: [] },
+  otherDevices: { speaker: '', speakerNote: '', smokeAlarm: '', smokeAlarmQty: 1, smokeAlarmWorking: [], smokeAlarmComments: '', smokeAlarmNote: '', dts: '', photos: [] },
   inspectorName: '',
   inspectorDate: '',
 }

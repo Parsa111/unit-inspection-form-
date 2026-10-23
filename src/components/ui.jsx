@@ -116,6 +116,25 @@ export function NumberInput({ id, label, value, onChange, min = 0, max = 99, ste
   )
 }
 
+// Multi-line text area for longer notes / comments
+export function TextArea({ id, label, value, onChange, placeholder, rows = 3 }) {
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      <label htmlFor={id} className="text-[0.7rem] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        rows={rows}
+        className="min-h-[88px] px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/70 text-slate-900 dark:text-white placeholder-slate-400 focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-all resize-y"
+      />
+    </div>
+  )
+}
+
 // Card wrapper for each inspection item
 export function ItemCard({ num, title, pink, hint, handwritten, isCompleted, children }) {
   return (
